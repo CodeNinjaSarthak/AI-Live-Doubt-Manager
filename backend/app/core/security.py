@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.models.teacher import Teacher
 from app.db.session import get_db
+from app.services.token_blacklist import token_blacklist
 
 security_scheme = HTTPBearer()
 
@@ -136,6 +137,9 @@ async def get_current_user(
         token = credentials.credentials
         payload = verify_token(token)
         if payload is None:
+            raise credentials_exception
+
+        if token_blacklist.is_blacklisted(token):
             raise credentials_exception
 
         teacher_id: str = payload.get("sub")

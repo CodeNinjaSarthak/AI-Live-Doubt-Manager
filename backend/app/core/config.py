@@ -64,8 +64,23 @@ class Settings(BaseSettings):
     youtube_redirect_uri: Optional[str] = None
 
     # Rate Limiting
-    rate_limit_per_minute: int = 60
-    rate_limit_burst: int = 10
+    rate_limit_requests_per_minute: int = 60
+    rate_limit_enabled: bool = True
+
+    # Encryption
+    encryption_key: str = Field(
+        default="change-me-must-be-32-chars-padded!",
+        description="Exactly 32+ character key for Fernet encryption"
+    )
+
+    @field_validator("encryption_key")
+    @classmethod
+    def validate_encryption_key(cls, v: str) -> str:
+        if len(v) < 32:
+            raise ValueError(
+                f"encryption_key must be at least 32 characters, got {len(v)}"
+            )
+        return v
 
     # Quota limits
     default_daily_answer_limit: int = 100

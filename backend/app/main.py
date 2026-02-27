@@ -10,6 +10,7 @@ from app.api.v1 import (
     auth,
     clusters,
     comments,
+    metrics as metrics_v1,
     rag,
     sessions,
     websocket,
@@ -19,6 +20,7 @@ from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.metrics import metrics_endpoint
 from app.core.middleware import RequestContextMiddleware
+from app.core.rate_limit_middleware import RateLimitMiddleware
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -40,7 +42,11 @@ app.add_middleware(
 
 app.add_middleware(RequestContextMiddleware)
 
+# RateLimitMiddleware added last so it wraps all other middleware (runs first on every request)
+app.add_middleware(RateLimitMiddleware)
+
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
+app.include_router(metrics_v1.router, prefix=settings.api_v1_prefix)
 app.include_router(youtube.router, prefix=settings.api_v1_prefix)
 app.include_router(sessions.router, prefix=settings.api_v1_prefix)
 app.include_router(comments.router, prefix=settings.api_v1_prefix)

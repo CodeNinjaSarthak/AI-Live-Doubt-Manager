@@ -1,32 +1,23 @@
 """Encryption utilities for sensitive data."""
 
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.backends import default_backend
 import base64
-import os
+
+from cryptography.fernet import Fernet
 
 from app.core.config import settings
 
 
 def get_encryption_key() -> bytes:
-    """Generate or retrieve encryption key from secret.
+    """Derive a Fernet-compatible key from the configured encryption_key.
+
+    Config validator guarantees the key is at least 32 characters.
+    Takes the first 32 bytes and base64-encodes them for use as a Fernet key.
 
     Returns:
-        Encryption key bytes.
+        32-byte URL-safe base64-encoded key for Fernet.
     """
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=b"fixed_salt_change_in_production",
-        iterations=100000,
-        backend=default_backend(),
-    )
-    key = base64.urlsafe_b64encode(
-        kdf.derive(settings.secret_key.encode())
-    )
-    return key
+    key_bytes = settings.encryption_key.encode("utf-8")[:32]
+    return base64.urlsafe_b64encode(key_bytes)
 
 
 def encrypt_data(data: str) -> str:
@@ -39,8 +30,7 @@ def encrypt_data(data: str) -> str:
         Encrypted data as base64 string.
     """
     f = Fernet(get_encryption_key())
-    encrypted = f.encrypt(data.encode())
-    return base64.b64encode(encrypted).decode()
+    return base64.b64encode(f.encrypt(data.encode())).decode()
 
 
 def decrypt_data(encrypted_data: str) -> str:
@@ -54,6 +44,4 @@ def decrypt_data(encrypted_data: str) -> str:
     """
     f = Fernet(get_encryption_key())
     decoded = base64.b64decode(encrypted_data.encode())
-    decrypted = f.decrypt(decoded)
-    return decrypted.decode()
-
+    return f.decrypt(decoded).decode()

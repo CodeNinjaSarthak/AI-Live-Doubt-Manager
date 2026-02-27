@@ -1,8 +1,9 @@
 """Authentication API routes."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -11,9 +12,11 @@ from app.core.security import (
     create_refresh_token,
     get_current_active_user,
     hash_password,
+    security_scheme,
     verify_password,
     verify_token,
 )
+from app.services.token_blacklist import token_blacklist
 from app.db.models.teacher import Teacher
 from app.db.session import get_db
 from app.schemas.auth import (
@@ -174,11 +177,20 @@ async def get_current_teacher(
 
 
 @router.post("/logout")
-async def logout() -> dict:
-    """Logout endpoint.
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+) -> dict:
+    """Logout endpoint. Blacklists the current JWT token.
 
     Returns:
         Status response.
     """
+    token = credentials.credentials
+    payload = verify_token(token)
+    if payload:
+        exp = payload.get("exp")
+        if exp:
+            expires_in = int(exp - datetime.now(timezone.utc).timestamp())
+            token_blacklist.blacklist_token(token, expires_in)  # skips if <= 0
     return {"status": "ok", "message": "Logged out successfully"}
 
