@@ -18,6 +18,7 @@ QUEUE_CLASSIFICATION = "classification"
 QUEUE_EMBEDDING = "embedding"
 QUEUE_CLUSTERING = "clustering"
 QUEUE_ANSWER_GENERATION = "answer_generation"
+QUEUE_YOUTUBE_POSTING = "youtube_posting"
 
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_DELAY = 60

@@ -128,10 +128,12 @@ async def end_session(
 @router.get("/{session_id}/comments", response_model=List[CommentResponse])
 async def list_session_comments(
     session_id: UUID,
+    limit: int = 100,
+    offset: int = 0,
     current_user: Teacher = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ) -> List[CommentResponse]:
-    """List all comments for a session."""
+    """List comments for a session with pagination."""
     session = (
         db.query(StreamingSession)
         .filter(
@@ -143,7 +145,13 @@ async def list_session_comments(
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
-    comments = db.query(Comment).filter(Comment.session_id == session_id).all()
+    comments = (
+        db.query(Comment)
+        .filter(Comment.session_id == session_id)
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
     return comments
 
 

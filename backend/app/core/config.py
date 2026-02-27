@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     # API
     api_v1_prefix: str = "/api/v1"
     cors_origins: list[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"],
+        default=["http://localhost:3000", "http://localhost:8000", "http://localhost:8080"],
         description="Allowed CORS origins"
     )
 
@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     youtube_client_id: Optional[str] = None
     youtube_client_secret: Optional[str] = None
     youtube_redirect_uri: Optional[str] = None
+
+    # Frontend
+    frontend_dir: str = Field(default="", description="Absolute path to frontend/ directory")
 
     # Rate Limiting
     rate_limit_requests_per_minute: int = 60

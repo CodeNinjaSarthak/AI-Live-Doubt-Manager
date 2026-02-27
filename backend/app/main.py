@@ -1,15 +1,21 @@
 """FastAPI application main entry point."""
 
+import asyncio
+import json
 import logging
+import os
 
+import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import (
     answers,
     auth,
     clusters,
     comments,
+    dashboard,
     metrics as metrics_v1,
     rag,
     sessions,
@@ -21,6 +27,7 @@ from app.core.logging import setup_logging
 from app.core.metrics import metrics_endpoint
 from app.core.middleware import RequestContextMiddleware
 from app.core.rate_limit_middleware import RateLimitMiddleware
+from app.services.websocket.manager import manager
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -53,45 +60,59 @@ app.include_router(comments.router, prefix=settings.api_v1_prefix)
 app.include_router(clusters.router, prefix=settings.api_v1_prefix)
 app.include_router(answers.router, prefix=settings.api_v1_prefix)
 app.include_router(rag.router, prefix=settings.api_v1_prefix + "/rag", tags=["rag"])
+app.include_router(dashboard.router, prefix=settings.api_v1_prefix)
 app.include_router(websocket.router)
+
+# Serve frontend SPA if FRONTEND_DIR is configured
+if settings.frontend_dir and os.path.isdir(settings.frontend_dir):
+    app.mount("/app", StaticFiles(directory=settings.frontend_dir, html=True), name="frontend")
+    logger.info(f"Serving frontend from {settings.frontend_dir} at /app")
+
+
+async def _relay_redis_events() -> None:
+    """Subscribe to worker-published Redis pub/sub events and relay via WebSocket."""
+    try:
+        r = aioredis.from_url(settings.redis_url, decode_responses=True)
+        pubsub = r.pubsub()
+        await pubsub.psubscribe("ws:session:*")
+        async for message in pubsub.listen():
+            if message["type"] != "pmessage":
+                continue
+            channel = message["channel"]  # "ws:session:{session_id}"
+            session_id = channel.split(":")[-1]
+            try:
+                event = json.loads(message["data"])
+                await manager.broadcast_to_session(session_id, event)
+            except Exception as e:
+                logger.error(f"Failed to relay Redis event for session {session_id}: {e}")
+    except Exception as e:
+        logger.error(f"Redis relay error: {e}")
 
 
 @app.get("/")
 async def root() -> dict:
-    """Root endpoint.
-
-    Returns:
-        API status.
-    """
+    """Root endpoint."""
     return {
         "status": "ok",
         "message": settings.app_name,
         "version": settings.app_version,
-        "environment": settings.environment
+        "environment": settings.environment,
     }
 
 
 @app.get("/health")
 async def health() -> dict:
-    """Health check endpoint.
-
-    Returns:
-        Health status.
-    """
+    """Health check endpoint."""
     return {
         "status": "ok",
         "health": "healthy",
-        "environment": settings.environment
+        "environment": settings.environment,
     }
 
 
 @app.get("/metrics")
 async def metrics():
-    """Prometheus metrics endpoint.
-
-    Returns:
-        Prometheus metrics.
-    """
+    """Prometheus metrics endpoint."""
     from starlette.requests import Request
     request = Request(scope={"type": "http"})
     return await metrics_endpoint(request)
@@ -102,15 +123,12 @@ async def startup_event():
     """Application startup event."""
     logger.info(
         f"Starting {settings.app_name} v{settings.app_version}",
-        extra={
-            "environment": settings.environment,
-            "debug": settings.debug
-        }
+        extra={"environment": settings.environment, "debug": settings.debug},
     )
+    asyncio.create_task(_relay_redis_events())
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown event."""
     logger.info(f"Shutting down {settings.app_name}")
-

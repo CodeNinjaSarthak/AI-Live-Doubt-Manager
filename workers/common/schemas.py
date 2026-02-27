@@ -133,3 +133,26 @@ class AnswerGenerationPayload:
             "retry_count": self.retry_count,
             "max_retries": self.max_retries,
         }
+
+
+@dataclass
+class YouTubePostingPayload:
+    """Payload for YouTube posting queue."""
+
+    answer_id: str
+    session_id: str
+    task_id: Optional[str] = None
+    created_at: Optional[datetime] = None
+    retry_count: int = 0
+    max_retries: int = 3
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "answer_id": self.answer_id,
+            "session_id": self.session_id,
+            "task_id": self.task_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "retry_count": self.retry_count,
+            "max_retries": self.max_retries,
+        }

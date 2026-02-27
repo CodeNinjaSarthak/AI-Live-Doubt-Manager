@@ -12,11 +12,14 @@ sys.path.insert(0, _project_root)
 sys.path.insert(0, os.path.join(_project_root, "backend"))
 
 from sqlalchemy import text
-from workers.common.queue import QueueManager, QUEUE_ANSWER_GENERATION
+from workers.common.queue import QueueManager, QUEUE_ANSWER_GENERATION, QUEUE_YOUTUBE_POSTING
 from workers.common.db import get_db_session
+from workers.common.schemas import YouTubePostingPayload
 from app.services.gemini.client import GeminiClient, vector_to_literal
 from app.db.models.cluster import Cluster
 from app.db.models.answer import Answer
+from app.db.models.streaming_session import StreamingSession
+from app.db.models.youtube_token import YouTubeToken
 
 logging.basicConfig(
     level=logging.INFO,
@@ -73,6 +76,21 @@ def main() -> None:
                         db.add(answer)
                         db.commit()
                         logger.info(f"Answer generated for cluster {cluster_id}, answer_id={answer.id}")
+
+                        # Auto-enqueue to YouTube posting if session has YouTube connected
+                        session = db.query(StreamingSession).filter(
+                            StreamingSession.id == cluster.session_id
+                        ).first()
+                        if session and session.youtube_video_id:
+                            yt_token = db.query(YouTubeToken).filter(
+                                YouTubeToken.teacher_id == session.teacher_id
+                            ).first()
+                            if yt_token:
+                                manager.enqueue(QUEUE_YOUTUBE_POSTING, YouTubePostingPayload(
+                                    answer_id=str(answer.id),
+                                    session_id=str(session.id)
+                                ).to_dict())
+                                logger.info(f"Enqueued answer {answer.id} for YouTube posting")
                     finally:
                         db.close()
                 task = None
