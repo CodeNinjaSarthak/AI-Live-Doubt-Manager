@@ -78,6 +78,12 @@ class Settings(BaseSettings):
     queue_clustering: str = "clustering"
     queue_answer_generation: str = "answer_generation"
 
+    # Gemini AI
+    gemini_api_key: str = Field(default="", description="Gemini API key")
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_embedding_model: str = "gemini-embedding-001"
+    clustering_threshold: int = Field(default=5, description="Questions needed to trigger clustering")
+
     # Logging
     log_level: str = "INFO"
     log_json: bool = False

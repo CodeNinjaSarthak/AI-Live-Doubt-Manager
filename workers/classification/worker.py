@@ -9,7 +9,12 @@ import time
 # regardless of whether this file is run as a script or as a module.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from workers.common.queue import QueueManager, QUEUE_CLASSIFICATION
+import json
+from workers.common.queue import QueueManager, QUEUE_CLASSIFICATION, QUEUE_EMBEDDING
+from workers.common.db import get_db_session
+from workers.common.schemas import EmbeddingPayload
+from backend.app.services.gemini.client import GeminiClient
+from backend.app.db.models.comment import Comment
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,6 +28,7 @@ POLL_INTERVAL = 1  # seconds
 def main() -> None:
     """Main entry point for classification worker."""
     logger.info("Starting classification worker...")
+    gemini_client = GeminiClient()
     manager = QueueManager()
     task = None
 
@@ -34,20 +40,31 @@ def main() -> None:
                     time.sleep(POLL_INTERVAL)
                     continue
 
-                logger.info(
-                    "Processing task",
-                    extra={
-                        "task_id": task.get("task_id"),
-                        "comment_id": task.get("comment_id"),
-                        "session_id": task.get("session_id"),
-                        "text_preview": (task.get("text") or "")[:50],
-                    }
-                )
-                # Phase 1: log-and-ack, no AI processing
-                logger.info(
-                    "Task acknowledged (no-op — AI logic is Phase 2)",
-                    extra={"task_id": task.get("task_id")}
-                )
+                comment_id = task.get("comment_id")
+                for db in get_db_session():
+                    try:
+                        comment = db.query(Comment).filter(Comment.id == comment_id).first()
+                        if not comment:
+                            logger.warning(f"Comment {comment_id} not found, skipping")
+                            break
+                        result = gemini_client.classify_question(comment.text)
+                        comment.is_question = result["is_question"]
+                        comment.confidence_score = result["confidence"]
+                        db.commit()
+                        if result["is_question"]:
+                            manager.enqueue(QUEUE_EMBEDDING, EmbeddingPayload(
+                                comment_id=str(comment.id), text=comment.text
+                            ).to_dict())
+                        logger.info(
+                            "Classification complete",
+                            extra={
+                                "comment_id": comment_id,
+                                "is_question": result["is_question"],
+                                "confidence": result["confidence"],
+                            }
+                        )
+                    finally:
+                        db.close()
                 task = None
 
             except Exception as e:

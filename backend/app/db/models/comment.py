@@ -36,7 +36,7 @@ class Comment(Base):
     is_question = Column(Boolean, default=False, nullable=False)
     is_answered = Column(Boolean, default=False, nullable=False)
     confidence_score = Column(Float, nullable=True)
-    embedding = Column(Vector(1536), nullable=True)
+    embedding = Column(Vector(768), nullable=True)
     published_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(

@@ -10,6 +10,7 @@ from app.api.v1 import (
     auth,
     clusters,
     comments,
+    rag,
     sessions,
     websocket,
     youtube,
@@ -45,6 +46,7 @@ app.include_router(sessions.router, prefix=settings.api_v1_prefix)
 app.include_router(comments.router, prefix=settings.api_v1_prefix)
 app.include_router(clusters.router, prefix=settings.api_v1_prefix)
 app.include_router(answers.router, prefix=settings.api_v1_prefix)
+app.include_router(rag.router, prefix=settings.api_v1_prefix + "/rag", tags=["rag"])
 app.include_router(websocket.router)
 
 

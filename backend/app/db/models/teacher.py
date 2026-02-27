@@ -33,4 +33,5 @@ class Teacher(Base):
     streaming_sessions = relationship("StreamingSession", back_populates="teacher")
     youtube_tokens = relationship("YouTubeToken", back_populates="teacher")
     quotas = relationship("Quota", back_populates="teacher")
+    rag_documents = relationship("RAGDocument", back_populates="teacher", cascade="all, delete-orphan")
 

@@ -26,7 +26,7 @@ class Cluster(Base):
     title = Column(String(500), nullable=False)
     description = Column(Text, nullable=True)
     similarity_threshold = Column(Float, default=0.8, nullable=False)
-    centroid_embedding = Column(Vector(1536), nullable=True)
+    centroid_embedding = Column(Vector(768), nullable=True)
     comment_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(
