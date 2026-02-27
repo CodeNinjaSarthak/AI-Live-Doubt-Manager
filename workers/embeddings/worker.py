@@ -5,16 +5,18 @@ import os
 import sys
 import time
 
-# Ensure project root is on sys.path so 'workers' package resolves
-# regardless of whether this file is run as a script or as a module.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Ensure project root is on sys.path (for 'workers' package) and
+# backend/ is on sys.path (for 'app' package).
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _project_root)
+sys.path.insert(0, os.path.join(_project_root, "backend"))
 
 import redis as redis_lib
 from workers.common.queue import QueueManager, QUEUE_EMBEDDING, QUEUE_CLUSTERING
 from workers.common.db import get_db_session
 from workers.common.schemas import ClusteringPayload
-from backend.app.services.gemini.client import GeminiClient
-from backend.app.db.models.comment import Comment
+from app.services.gemini.client import GeminiClient
+from app.db.models.comment import Comment
 
 logging.basicConfig(
     level=logging.INFO,

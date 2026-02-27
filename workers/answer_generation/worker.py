@@ -5,16 +5,18 @@ import os
 import sys
 import time
 
-# Ensure project root is on sys.path so 'workers' package resolves
-# regardless of whether this file is run as a script or as a module.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Ensure project root is on sys.path (for 'workers' package) and
+# backend/ is on sys.path (for 'app' package).
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, _project_root)
+sys.path.insert(0, os.path.join(_project_root, "backend"))
 
 from sqlalchemy import text
 from workers.common.queue import QueueManager, QUEUE_ANSWER_GENERATION
 from workers.common.db import get_db_session
-from backend.app.services.gemini.client import GeminiClient, vector_to_literal
-from backend.app.db.models.cluster import Cluster
-from backend.app.db.models.answer import Answer
+from app.services.gemini.client import GeminiClient, vector_to_literal
+from app.db.models.cluster import Cluster
+from app.db.models.answer import Answer
 
 logging.basicConfig(
     level=logging.INFO,
