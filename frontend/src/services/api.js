@@ -3,16 +3,20 @@
  * Base helper redirects to /login on 401.
  */
 
+function handleUnauthorized() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('userName');
+  window.location.href = '/login';
+}
+
 async function apiFetch(path, options = {}, token = null) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(path, { ...options, headers });
 
   if (res.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userName');
-    window.location.href = '/login';
+    handleUnauthorized();
     return;
   }
 
@@ -78,31 +82,51 @@ export const submitManualQuestion = (sessionId, text, token) =>
 export const approveAnswer = (answerId, token) =>
   apiFetch(`/api/v1/dashboard/answers/${answerId}/approve`, { method: 'POST' }, token);
 
-// RAG Documents
-// Note: uses raw fetch — apiFetch sets Content-Type: application/json which
-// breaks multipart/form-data boundary. The browser sets the correct header itself.
-export async function uploadDocument(file, token) {
-  const formData = new FormData();
-  formData.append('file', file);
-  const headers = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const res = await fetch('/api/v1/rag/documents', { method: 'POST', headers, body: formData });
-  if (res.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userName');
-    window.location.href = '/login';
-    return;
-  }
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || body.message || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
+export const editAnswer = (answerId, text, token) =>
+  apiFetch(`/api/v1/dashboard/answers/${answerId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ text }),
+  }, token);
 
-export const getDocuments = (token) =>
-  apiFetch('/api/v1/rag/documents', {}, token);
+// RAG Documents
+export const getDocuments = ({ token, sessionId = null }) =>
+  apiFetch(
+    sessionId ? `/api/v1/rag/documents?session_id=${sessionId}` : '/api/v1/rag/documents',
+    {},
+    token
+  );
+
+export function uploadDocument(sessionId, file, token, onProgress = () => {}, xhrRef = null) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    if (xhrRef) xhrRef.current = xhr;
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onabort = () => reject(new Error('aborted'));
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.onload = () => {
+      if (xhr.status === 401) { handleUnauthorized(); return; }
+      if (xhr.status >= 400) {
+        try { reject(new Error(JSON.parse(xhr.responseText).detail || `HTTP ${xhr.status}`)); }
+        catch { reject(new Error(`HTTP ${xhr.status}`)); }
+        return;
+      }
+      try { resolve(JSON.parse(xhr.responseText)); }
+      catch { reject(new Error('Invalid response')); }
+    };
+    xhr.open('POST', '/api/v1/rag/documents');
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('session_id', sessionId);
+    xhr.send(fd);
+  });
+}
 
 export const deleteDocument = (documentId, token) =>
   apiFetch(`/api/v1/rag/documents/${documentId}`, { method: 'DELETE' }, token);
+
+// Clusters
+export const getClusterComments = (clusterId, token) =>
+  apiFetch(`/api/v1/clusters/${clusterId}/comments`, {}, token);

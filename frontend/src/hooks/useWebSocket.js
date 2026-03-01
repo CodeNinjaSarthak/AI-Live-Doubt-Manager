@@ -5,9 +5,10 @@ const MAX_RETRIES = 10;
 export function useWebSocket(sessionId, token) {
   const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
   const wsRef = useRef(null);
   const retriesRef = useRef(0);
-  // Keep a stable ref for the connect function
+  const reconnectTimerRef = useRef(null);
   const sessionIdRef = useRef(sessionId);
   const tokenRef = useRef(token);
 
@@ -29,7 +30,9 @@ export function useWebSocket(sessionId, token) {
       const ws = new WebSocket(url);
 
       ws.onopen = () => {
+        clearTimeout(reconnectTimerRef.current);
         setConnected(true);
+        setReconnecting(false);
         retriesRef.current = 0;
       };
 
@@ -45,6 +48,8 @@ export function useWebSocket(sessionId, token) {
         if (cancelled) return;
         if (e.code === 4001 || e.code === 4003) return;
         if (retriesRef.current < MAX_RETRIES) {
+          // Only surface "Reconnecting..." label if retry takes > 1.5s (debounce)
+          reconnectTimerRef.current = setTimeout(() => setReconnecting(true), 1500);
           const delay = Math.min(1000 * 2 ** retriesRef.current, 30000);
           retriesRef.current++;
           setTimeout(connect, delay);
@@ -58,6 +63,8 @@ export function useWebSocket(sessionId, token) {
 
     return () => {
       cancelled = true;
+      clearTimeout(reconnectTimerRef.current);
+      setReconnecting(false);
       if (wsRef.current) {
         wsRef.current.onclose = null;
         wsRef.current.close();
@@ -67,5 +74,5 @@ export function useWebSocket(sessionId, token) {
     };
   }, [sessionId, token]);
 
-  return { messages, connected };
+  return { messages, connected, reconnecting };
 }

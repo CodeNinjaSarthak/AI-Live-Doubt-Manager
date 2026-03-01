@@ -1,59 +1,117 @@
-import { useState, useEffect } from 'react';
-import { getSessionClusters, approveAnswer } from '../../services/api';
+import { useState, useEffect, useRef } from 'react';
+import { getSessionClusters, approveAnswer, editAnswer, getClusterComments } from '../../services/api';
+import { showToast } from '../../hooks/useToast';
+import { ClusterDetailsModal } from './ClusterDetailsModal';
 
 const REFETCH_EVENTS = new Set(['cluster_created', 'cluster_updated', 'answer_ready', 'answer_posted']);
 
 export function ClustersPanel({ sessionId, token, wsMessages }) {
   const [clusters, setClusters] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [approvingId, setApprovingId] = useState(null);
-
-  useEffect(() => {
-    fetchClusters();
-  }, [sessionId, token]);
+  const [editingAnswerId, setEditingAnswerId] = useState(null);
+  const [editedText, setEditedText] = useState('');
+  const [savingId, setSavingId] = useState(null);
+  const [clusterFilter, setClusterFilter] = useState('all');
+  const [selectedCluster, setSelectedCluster] = useState(null);
+  const [modalComments, setModalComments] = useState(null);
+  const commentCache = useRef(new Map());
 
   async function fetchClusters() {
+    const data = await getSessionClusters(sessionId, token);
+    if (data) setClusters(data);
+  }
+
+  useEffect(() => {
+    let stale = false;
+    async function run() {
+      setIsLoadingInitial(true);
+      setError(null);
+      try {
+        const data = await getSessionClusters(sessionId, token);
+        if (!stale) setClusters(data || []);
+      } catch (e) {
+        if (!stale) setError(e.message);
+      } finally {
+        if (!stale) setIsLoadingInitial(false);
+      }
+    }
+    run();
+    return () => { stale = true; };
+  }, [sessionId, token]);
+
+  // WS-triggered refetch — targeted cache invalidation
+  useEffect(() => {
+    if (!wsMessages || wsMessages.length === 0) return;
+    const last = wsMessages[wsMessages.length - 1];
+    if (last && REFETCH_EVENTS.has(last.type)) {
+      const affectedId = last.data?.cluster_id ?? last.data?.id ?? null;
+      if (affectedId) {
+        commentCache.current.delete(affectedId);
+      } else {
+        commentCache.current.clear();
+      }
+      fetchClusters().catch(() => {});
+    }
+  }, [wsMessages]);
+
+  async function openClusterModal(cluster) {
+    setSelectedCluster(cluster);
+    if (commentCache.current.has(cluster.id)) {
+      setModalComments(commentCache.current.get(cluster.id));
+      return;
+    }
+    setModalComments(null);
     try {
-      setLoading(true);
-      const data = await getSessionClusters(sessionId, token);
-      setClusters(data || []);
-    } catch (e) {
-      setError(e.message);
+      const data = await getClusterComments(cluster.id, token);
+      const processed = (data || []).map(c => ({
+        ...c,
+        _time: new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }));
+      commentCache.current.set(cluster.id, processed);
+      setModalComments(processed);
+    } catch {
+      setModalComments([]);
+    }
+  }
+
+  async function handleApprove(answerId) {
+    setLoading(true);
+    try {
+      await approveAnswer(answerId, token);
+      await fetchClusters();
+      showToast('Answer approved and posted!', 'success');
+    } catch (err) {
+      setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => {
-    if (!wsMessages || wsMessages.length === 0) return;
-    const last = wsMessages[wsMessages.length - 1];
-    if (last && REFETCH_EVENTS.has(last.type)) {
-      fetchClusters();
-    }
-  }, [wsMessages]);
+  function startEdit(answer) {
+    setEditingAnswerId(answer.id);
+    setEditedText(answer.text);
+  }
 
-  async function handleApprove(answerId) {
-    setApprovingId(answerId);
+  function cancelEdit() {
+    setEditingAnswerId(null);
+    setEditedText('');
+  }
+
+  async function handleSaveEdit(answerId) {
+    setSavingId(answerId);
     try {
-      await approveAnswer(answerId, token);
-      // Optimistic update: flip is_posted immediately so the badge changes
-      // and the button disappears without waiting for a re-fetch.
-      setClusters(prev =>
-        prev.map(cluster => ({
-          ...cluster,
-          answers: cluster.answers.map(a =>
-            a.id === answerId ? { ...a, is_posted: true } : a
-          ),
-        }))
-      );
-      // Silent background re-fetch to sync canonical server state.
-      const data = await getSessionClusters(sessionId, token);
-      if (data) setClusters(data);
-    } catch (e) {
-      setError(e.message);
+      await editAnswer(answerId, editedText, token);
+      await fetchClusters();
+      setEditingAnswerId(null);
+      setEditedText('');
+      showToast('Answer updated.', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
     } finally {
-      setApprovingId(null);
+      setSavingId(null);
     }
   }
 
@@ -61,50 +119,136 @@ export function ClustersPanel({ sessionId, token, wsMessages }) {
     navigator.clipboard.writeText(text).catch(() => {});
   }
 
+  const filteredClusters = clusters.filter(cluster => {
+    if (clusterFilter === 'all') return true;
+    const answers = cluster.answers ?? [];
+    const latest = answers.length > 0 ? answers[answers.length - 1] : null;
+    if (clusterFilter === 'approved') return latest?.is_posted === true;
+    if (clusterFilter === 'pending') return !latest?.is_posted;
+    return true;
+  });
+
   return (
     <section className="panel">
       <h2>Clusters &amp; Answers</h2>
-      {loading ? (
-        <p>Loading...</p>
+
+      <div className="filter-tabs">
+        {['all', 'pending', 'approved'].map(tab => (
+          <button
+            key={tab}
+            className={`filter-tab${clusterFilter === tab ? ' active' : ''}`}
+            onClick={() => setClusterFilter(tab)}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {isLoadingInitial ? (
+        <div className="clusters-list">
+          {[1, 2].map(i => (
+            <div key={i} className="cluster-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div className="skeleton" style={{ width: '60%', height: 16 }} />
+                <div className="skeleton" style={{ width: 60, height: 14 }} />
+              </div>
+              <div className="skeleton" style={{ height: 60, marginBottom: 8 }} />
+              <div className="skeleton" style={{ width: 80, height: 28 }} />
+            </div>
+          ))}
+        </div>
       ) : error ? (
         <p className="error-msg">{error}</p>
       ) : (
         <div className="clusters-list">
-          {clusters.length === 0 ? (
-            <p className="empty-msg">No clusters yet. Questions need to be classified first.</p>
+          {filteredClusters.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">🤖</span>
+              <p>{clusters.length === 0 ? 'No clusters yet' : 'No clusters match this filter'}</p>
+              {clusters.length === 0 && (
+                <p className="empty-hint">Questions cluster automatically after 5 similar ones arrive</p>
+              )}
+            </div>
           ) : (
-            clusters.map(cluster => {
+            filteredClusters.map(cluster => {
               const answers = cluster.answers || [];
               const latestAnswer = answers[answers.length - 1];
+              const isEditing = latestAnswer && editingAnswerId === latestAnswer.id;
               return (
                 <div key={cluster.id} className="cluster-card">
                   <div className="cluster-header">
-                    <span className="cluster-title">{cluster.title || 'Untitled Cluster'}</span>
-                    <span className="cluster-count">{cluster.comment_count || 0} questions</span>
+                    <span
+                      className="cluster-title"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => openClusterModal(cluster)}
+                    >
+                      {cluster.title || 'Untitled Cluster'}
+                    </span>
+                    <span
+                      className="cluster-count"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => openClusterModal(cluster)}
+                    >
+                      {cluster.comment_count || 0} questions
+                    </span>
                   </div>
                   {latestAnswer ? (
                     <>
-                      <div className="cluster-answer">{latestAnswer.text}</div>
+                      {isEditing ? (
+                        <textarea
+                          value={editedText}
+                          onChange={e => setEditedText(e.target.value)}
+                          style={{ width: '100%', marginBottom: 8, minHeight: 80 }}
+                        />
+                      ) : (
+                        <div className="cluster-answer">{latestAnswer.text}</div>
+                      )}
                       <div style={{ marginBottom: 6 }}>
                         <span className={`badge ${latestAnswer.is_posted ? 'badge-posted' : 'badge-pending'}`}>
                           {latestAnswer.is_posted ? 'Posted' : 'Pending'}
                         </span>
                       </div>
                       <div className="cluster-actions">
-                        <button
-                          className="btn btn-sm"
-                          onClick={() => copyToClipboard(latestAnswer.text)}
-                        >
-                          Copy
-                        </button>
-                        {!latestAnswer.is_posted && (
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => handleApprove(latestAnswer.id)}
-                            disabled={approvingId === latestAnswer.id}
-                          >
-                            {approvingId === latestAnswer.id ? 'Posting...' : 'Approve & Post'}
-                          </button>
+                        {isEditing ? (
+                          <>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => handleSaveEdit(latestAnswer.id)}
+                              disabled={savingId === latestAnswer.id || !editedText.trim()}
+                            >
+                              {savingId === latestAnswer.id ? 'Saving...' : 'Save'}
+                            </button>
+                            <button className="btn btn-sm" onClick={cancelEdit}>
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              className="btn btn-sm"
+                              onClick={() => copyToClipboard(latestAnswer.text)}
+                            >
+                              Copy
+                            </button>
+                            {!latestAnswer.is_posted && (
+                              <>
+                                <button
+                                  className="btn btn-sm"
+                                  onClick={() => startEdit(latestAnswer)}
+                                  disabled={loading}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  onClick={() => handleApprove(latestAnswer.id)}
+                                  disabled={loading}
+                                >
+                                  {loading ? 'Posting...' : 'Approve & Post'}
+                                </button>
+                              </>
+                            )}
+                          </>
                         )}
                       </div>
                     </>
@@ -116,6 +260,14 @@ export function ClustersPanel({ sessionId, token, wsMessages }) {
             })
           )}
         </div>
+      )}
+
+      {selectedCluster && (
+        <ClusterDetailsModal
+          cluster={selectedCluster}
+          comments={modalComments}
+          onClose={() => { setSelectedCluster(null); setModalComments(null); }}
+        />
       )}
     </section>
   );

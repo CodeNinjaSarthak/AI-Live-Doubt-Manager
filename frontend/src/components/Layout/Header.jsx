@@ -1,7 +1,7 @@
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
-export function Header() {
+export function Header({ connected, reconnecting, activeSession }) {
   const { displayName, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -16,6 +16,11 @@ export function Header() {
         <span className="logo">AI Doubt Manager</span>
       </div>
       <div className="header-right">
+        {activeSession && (
+          <span className={`connection-status ${reconnecting ? 'reconnecting' : connected ? 'connected' : 'connecting'}`}>
+            {reconnecting ? '🟡 Reconnecting...' : connected ? '🟢 Connected' : '⚪ Connecting...'}
+          </span>
+        )}
         {displayName && <span className="user-name">{displayName}</span>}
         <button onClick={handleLogout} className="btn btn-sm">Logout</button>
       </div>

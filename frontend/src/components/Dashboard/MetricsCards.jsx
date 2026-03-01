@@ -5,43 +5,55 @@ const REFETCH_EVENTS = new Set(['comment_created', 'cluster_created', 'answer_re
 
 export function MetricsCards({ sessionId, token, wsMessages }) {
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (sessionId) {
-      fetchStats();
-    } else {
-      setStats(null);
-      setLoading(false);
+    let stale = false;
+    async function run() {
+      if (!sessionId) {
+        setStats(null);
+        setIsLoadingInitial(false);
+        return;
+      }
+      setIsLoadingInitial(true);
+      setError(null);
+      try {
+        const data = await getSessionStats(sessionId, token);
+        if (!stale) setStats(data);
+      } catch (e) {
+        if (!stale) setError(e.message);
+      } finally {
+        if (!stale) setIsLoadingInitial(false);
+      }
     }
+    run();
+    return () => { stale = true; };
   }, [sessionId, token]);
 
-  async function fetchStats() {
-    try {
-      setLoading(true);
-      const data = await getSessionStats(sessionId, token);
-      setStats(data);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  // WS-triggered refetch — does NOT set isLoadingInitial
   useEffect(() => {
     if (!sessionId || !wsMessages || wsMessages.length === 0) return;
     const last = wsMessages[wsMessages.length - 1];
     if (last && REFETCH_EVENTS.has(last.type)) {
-      fetchStats();
+      getSessionStats(sessionId, token)
+        .then(data => { if (data) setStats(data); })
+        .catch(() => {});
     }
   }, [wsMessages]);
 
   return (
     <section className="panel">
       <h2>Session Stats</h2>
-      {loading ? (
-        <p>Loading...</p>
+      {isLoadingInitial && sessionId ? (
+        <div className="metrics-grid">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="metric-card">
+              <div className="skeleton" style={{ height: 32, marginBottom: 6 }} />
+              <div className="skeleton" style={{ height: 12, width: '55%', margin: '0 auto' }} />
+            </div>
+          ))}
+        </div>
       ) : error ? (
         <p className="error-msg">{error}</p>
       ) : !stats ? (

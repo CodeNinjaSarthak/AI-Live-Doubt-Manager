@@ -14,6 +14,8 @@ export function SessionList({ token, onSelect, activeSession }) {
 
   // End session state
   const [ending, setEnding] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetchSessions();
@@ -59,11 +61,12 @@ export function SessionList({ token, onSelect, activeSession }) {
   async function handleEnd() {
     if (!activeSession) return;
     setEnding(true);
+    setShowEndConfirm(false);
     try {
       await endSession(activeSession.id, token);
       setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, is_active: false } : s));
       onSelect(null);
-    } catch (e) {
+    } catch {
       // ignore
     } finally {
       setEnding(false);
@@ -73,6 +76,23 @@ export function SessionList({ token, onSelect, activeSession }) {
   return (
     <section className="panel">
       <h2>Session</h2>
+
+      {showEndConfirm && (
+        <div className="modal-overlay" onClick={() => setShowEndConfirm(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>End session?</h3>
+            <p>This will stop YouTube polling and end the session. This cannot be undone.</p>
+            <div className="modal-actions">
+              <button className="btn btn-sm" onClick={() => setShowEndConfirm(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-danger btn-sm" onClick={handleEnd} disabled={ending}>
+                {ending ? 'Ending...' : 'End Session'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeSession ? (
         <div>
@@ -85,7 +105,11 @@ export function SessionList({ token, onSelect, activeSession }) {
           ) : (
             <p className="hint">Manual mode (no YouTube video)</p>
           )}
-          <button onClick={handleEnd} className="btn btn-danger" disabled={ending}>
+          <button
+            onClick={() => setShowEndConfirm(true)}
+            className="btn btn-danger"
+            disabled={ending}
+          >
             {ending ? 'Ending...' : 'End Session'}
           </button>
           <button onClick={() => onSelect(null)} className="btn" style={{ marginLeft: 8 }}>
@@ -126,22 +150,46 @@ export function SessionList({ token, onSelect, activeSession }) {
             <p className="error-msg" style={{ marginTop: 8 }}>{error}</p>
           ) : sessions.length > 0 ? (
             <div style={{ marginTop: 16 }}>
-              <p className="hint">Previous sessions:</p>
-              {sessions.filter(s => !s.is_active).slice(0, 5).map(s => (
-                <div
-                  key={s.id}
-                  onClick={() => onSelect(s)}
-                  style={{
-                    padding: '6px 8px',
-                    fontSize: 12,
-                    color: 'var(--color-muted)',
-                    borderBottom: '1px solid var(--color-border)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {s.title}
-                </div>
-              ))}
+              <select
+                className="session-filter"
+                value={filter}
+                onChange={e => setFilter(e.target.value)}
+              >
+                <option value="all">All Sessions</option>
+                <option value="active">Active Only</option>
+                <option value="ended">Ended Only</option>
+              </select>
+              {(() => {
+                const displayedSessions = sessions.filter(s => {
+                  if (filter === 'active') return s.is_active;
+                  if (filter === 'ended') return !s.is_active;
+                  return true;
+                });
+                return displayedSessions.length > 0 ? displayedSessions.map(s => (
+                  <div
+                    key={s.id}
+                    onClick={() => onSelect(s)}
+                    style={{
+                      padding: '6px 8px',
+                      fontSize: 12,
+                      color: 'var(--color-muted)',
+                      borderBottom: '1px solid var(--color-border)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {s.title}
+                    {s.is_active && <span className="badge badge-active" style={{ marginLeft: 6 }}>Live</span>}
+                  </div>
+                )) : (
+                  <p className="hint" style={{ marginTop: 8 }}>No sessions match this filter.</p>
+                );
+              })()}
+            </div>
+          ) : !loading && !error ? (
+            <div className="empty-state" style={{ padding: '16px 0' }}>
+              <span className="empty-icon">🎓</span>
+              <p>No sessions yet</p>
+              <p className="empty-hint">Create your first session to start managing questions</p>
             </div>
           ) : null}
         </div>

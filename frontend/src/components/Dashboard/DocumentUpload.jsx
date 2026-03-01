@@ -1,58 +1,103 @@
 import { useState, useEffect, useRef } from 'react';
 import { uploadDocument, getDocuments, deleteDocument } from '../../services/api';
+import { showToast } from '../../hooks/useToast';
 
-export function DocumentUpload({ token }) {
+const MAX_SIZE = 10 * 1024 * 1024;
+const ALLOWED = ['.pdf', '.docx', '.txt'];
+
+function formatBytes(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function DocumentUpload({ sessionId, token }) {
   const [docs, setDocs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [status, setStatus] = useState(null); // { type: 'success' | 'error', message }
-  const [deletingId, setDeletingId] = useState(null);
+  const [pct, setPct] = useState(0);
   const fileRef = useRef(null);
+  const uploadXhrRef = useRef(null);
 
+  // Fetch docs for current session — stale closure guard
   useEffect(() => {
-    fetchDocs();
-  }, [token]);
-
-  async function fetchDocs() {
-    try {
-      setLoading(true);
-      const data = await getDocuments(token);
-      setDocs(data || []);
-    } catch {
-      setDocs([]);
-    } finally {
-      setLoading(false);
+    let stale = false;
+    async function run() {
+      setIsLoadingInitial(true);
+      try {
+        const data = await getDocuments({ token, sessionId });
+        if (!stale) setDocs(data || []);
+      } catch {
+        if (!stale) setDocs([]);
+      } finally {
+        if (!stale) setIsLoadingInitial(false);
+      }
     }
-  }
+    run();
+    return () => { stale = true; };
+  }, [sessionId, token]);
+
+  // Abort in-flight upload when session changes
+  useEffect(() => {
+    return () => {
+      if (uploadXhrRef.current) {
+        uploadXhrRef.current.abort();
+        uploadXhrRef.current = null;
+      }
+    };
+  }, [sessionId]);
 
   async function handleUpload(e) {
     e.preventDefault();
     const file = fileRef.current?.files[0];
     if (!file) return;
+
+    if (file.size > MAX_SIZE) {
+      showToast('File must be under 10MB', 'error');
+      return;
+    }
+    if (!ALLOWED.some(ext => file.name.toLowerCase().endsWith(ext))) {
+      showToast('Only .pdf, .docx, .txt files allowed', 'error');
+      return;
+    }
+
+    const boundSessionId = sessionId;
     setUploading(true);
-    setStatus(null);
+    setPct(0);
     try {
-      const result = await uploadDocument(file, token);
-      const n = result.chunks_created;
-      setStatus({ type: 'success', message: `Uploaded — ${n} chunk${n !== 1 ? 's' : ''} indexed.` });
-      if (fileRef.current) fileRef.current.value = '';
-      await fetchDocs();
-    } catch (e) {
-      setStatus({ type: 'error', message: e.message });
+      const result = await uploadDocument(sessionId, file, token, setPct, uploadXhrRef);
+      if (sessionId === boundSessionId) {
+        const n = result.chunks_created;
+        showToast(`Uploaded — ${n} chunk${n !== 1 ? 's' : ''} indexed.`, 'success');
+        if (fileRef.current) fileRef.current.value = '';
+        // Refetch docs for this session
+        const data = await getDocuments({ token, sessionId });
+        setDocs(data || []);
+      }
+    } catch (err) {
+      if (err.message === 'aborted') return;
+      if (sessionId === boundSessionId) showToast(err.message, 'error');
     } finally {
       setUploading(false);
+      setPct(0);
     }
   }
 
   async function handleDelete(docId) {
-    setDeletingId(docId);
+    const idx = docs.findIndex(d => d.id === docId);
+    const removed = docs[idx];
+    setDocs(prev => prev.filter(d => d.id !== docId));
     try {
       await deleteDocument(docId, token);
-      setDocs(prev => prev.filter(d => d.id !== docId));
     } catch {
-      // deletion failed — list will re-sync on next fetchDocs
-    } finally {
-      setDeletingId(null);
+      if (removed !== undefined) {
+        setDocs(prev => {
+          const next = [...prev];
+          next.splice(idx, 0, removed);
+          return next;
+        });
+      }
     }
   }
 
@@ -60,23 +105,20 @@ export function DocumentUpload({ token }) {
     <section className="panel">
       <h2>RAG Documents</h2>
       <p className="hint" style={{ marginBottom: 10 }}>
-        Upload PDF or DOCX files to give the AI extra context when generating answers.
+        Upload files to give the AI extra context when generating answers.
       </p>
 
       <form onSubmit={handleUpload}>
         <input
           ref={fileRef}
           type="file"
-          accept=".pdf,.docx"
+          accept=".pdf,.docx,.txt"
           style={{ display: 'block', marginBottom: 8, fontSize: 13, width: '100%' }}
         />
-        {status && (
-          <p
-            className={status.type === 'error' ? 'error-msg' : 'hint'}
-            style={{ marginBottom: 6 }}
-          >
-            {status.message}
-          </p>
+        {pct > 0 && pct < 100 && (
+          <div style={{ background: 'var(--color-border)', borderRadius: 4, height: 4, margin: '6px 0' }}>
+            <div style={{ width: `${pct}%`, height: '100%', background: 'var(--color-primary)', borderRadius: 4, transition: 'width 0.2s' }} />
+          </div>
         )}
         <button type="submit" className="btn btn-primary" disabled={uploading}>
           {uploading ? 'Uploading...' : 'Upload'}
@@ -84,16 +126,24 @@ export function DocumentUpload({ token }) {
       </form>
 
       <div style={{ marginTop: 14 }}>
-        {loading ? (
-          <p style={{ fontSize: 13, color: 'var(--color-muted)' }}>Loading documents...</p>
+        {isLoadingInitial ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+            {[1, 2].map(i => (
+              <div key={i} className="skeleton" style={{ height: 32 }} />
+            ))}
+          </div>
         ) : docs.length === 0 ? (
-          <p className="hint">No documents uploaded yet.</p>
+          <div className="empty-state">
+            <span className="empty-icon">📄</span>
+            <p>No documents uploaded yet</p>
+            <p className="empty-hint">Upload PDFs to give the AI extra context when answering</p>
+          </div>
         ) : (
           <>
             <p className="hint" style={{ marginBottom: 6 }}>
-              Indexed chunks ({docs.length}):
+              Indexed documents ({docs.length}):
             </p>
-            <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 200, overflowY: 'auto' }}>
               {docs.map(doc => (
                 <div
                   key={doc.id}
@@ -102,7 +152,7 @@ export function DocumentUpload({ token }) {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 8,
-                    padding: '5px 0',
+                    padding: '6px 0',
                     borderBottom: '1px solid var(--color-border)',
                   }}
                 >
@@ -116,23 +166,21 @@ export function DocumentUpload({ token }) {
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                       }}
-                      title={doc.title}
+                      title={doc.filename || doc.title}
                     >
-                      {doc.title}
+                      {doc.filename || doc.title}
                     </span>
-                    {doc.source_type && (
-                      <span className="badge" style={{ fontSize: 10, marginTop: 2 }}>
-                        {doc.source_type.toUpperCase()}
-                      </span>
-                    )}
+                    <span style={{ fontSize: 11, color: 'var(--color-muted)' }}>
+                      {formatBytes(doc.file_size_bytes)}
+                      {doc.created_at && ` · ${new Date(doc.created_at).toLocaleDateString()}`}
+                    </span>
                   </div>
                   <button
                     className="btn btn-danger-sm"
                     onClick={() => handleDelete(doc.id)}
-                    disabled={deletingId === doc.id}
                     style={{ flexShrink: 0 }}
                   >
-                    {deletingId === doc.id ? '…' : 'Delete'}
+                    Delete
                   </button>
                 </div>
               ))}

@@ -13,11 +13,11 @@ import { DocumentUpload } from '../components/Dashboard/DocumentUpload';
 export function DashboardPage() {
   const { token } = useAuth();
   const [activeSession, setActiveSession] = useState(null);
-  const { messages: wsMessages, connected } = useWebSocket(activeSession?.id, token);
+  const { messages: wsMessages, connected, reconnecting } = useWebSocket(activeSession?.id, token);
 
   return (
     <div>
-      <Header />
+      <Header connected={connected} reconnecting={reconnecting} activeSession={activeSession} />
       <main className="app-main">
         <div className="panels-grid">
           <div className="left-column">
@@ -26,7 +26,7 @@ export function DashboardPage() {
             {activeSession && (
               <ManualInput sessionId={activeSession.id} token={token} />
             )}
-            {activeSession && <DocumentUpload token={token} />}
+            {activeSession && <DocumentUpload sessionId={activeSession.id} token={token} />}
             <MetricsCards sessionId={activeSession?.id} token={token} wsMessages={wsMessages} />
           </div>
           <div className="right-column">

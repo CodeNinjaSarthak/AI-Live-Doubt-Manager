@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import LandingPage from './pages/LandingPage';
+import { ToastContainer } from './components/Toast/Toast';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             }
           />
         </Routes>
+        <ToastContainer />
       </BrowserRouter>
     </AuthProvider>
   );
