@@ -118,17 +118,24 @@ async def metrics():
     return await metrics_endpoint(request)
 
 
+_relay_task: asyncio.Task | None = None
+
+
 @app.on_event("startup")
 async def startup_event():
     """Application startup event."""
+    global _relay_task
     logger.info(
         f"Starting {settings.app_name} v{settings.app_version}",
         extra={"environment": settings.environment, "debug": settings.debug},
     )
-    asyncio.create_task(_relay_redis_events())
+    _relay_task = asyncio.create_task(_relay_redis_events())
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Application shutdown event."""
+    global _relay_task
+    if _relay_task:
+        _relay_task.cancel()
     logger.info(f"Shutting down {settings.app_name}")

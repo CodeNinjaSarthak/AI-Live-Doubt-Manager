@@ -52,17 +52,10 @@ class API {
   // ----------------------------------------------------------------
 
   async login(email, password) {
-    const form = new FormData();
-    form.append('username', email);
-    form.append('password', password);
-
-    const resp = await fetch('/api/v1/auth/login', { method: 'POST', body: form });
-    if (!resp.ok) {
-      let msg = 'Login failed';
-      try { const e = await resp.json(); msg = e.detail || msg; } catch {}
-      throw new Error(msg);
-    }
-    const data = await resp.json();
+    const data = await this.request('POST', '/api/v1/auth/login', {
+      email,
+      password,
+    });
     this.token = data.access_token;
     localStorage.setItem('token', this.token);
     return data;
