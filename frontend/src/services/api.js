@@ -61,6 +61,24 @@ export const getSessionClusters = (sessionId, token) =>
 export const getSessionStats = (sessionId, token) =>
   apiFetch(`/api/v1/dashboard/sessions/${sessionId}/stats`, {}, token);
 
+export const getSessionAnalytics = (sessionId, token) =>
+  apiFetch(`/api/v1/sessions/${sessionId}/analytics`, {}, token);
+
+// Paginated comment fetcher — prevents silent truncation on large sessions
+export async function fetchAllComments(sessionId, token) {
+  const PAGE = 500;
+  let offset = 0;
+  const all = [];
+  while (true) {
+    const page = await getSessionComments(sessionId, token, PAGE, offset);
+    if (!page || page.length === 0) break;
+    all.push(...page);
+    if (page.length < PAGE) break;
+    offset += PAGE;
+  }
+  return all;
+}
+
 // YouTube
 export const getYouTubeAuthURL = (token) =>
   apiFetch('/api/v1/youtube/auth/url?return_url=%2F', {}, token);

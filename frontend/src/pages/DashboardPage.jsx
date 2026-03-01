@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -10,6 +10,7 @@ import { MetricsCards } from '../components/Dashboard/MetricsCards';
 import { QuestionsFeed } from '../components/Dashboard/QuestionsFeed';
 import { ClustersPanel } from '../components/Dashboard/ClustersPanel';
 import { DocumentUpload } from '../components/Dashboard/DocumentUpload';
+import { AnalyticsPanel } from '../components/Dashboard/AnalyticsPanel';
 
 export function DashboardPage() {
   const { token } = useAuth();
@@ -29,6 +30,19 @@ export function DashboardPage() {
       else titleInputRef.current?.focus();
     }, [activeSession]),
   });
+
+  // Tab view: 'main' | 'analytics' — reset on session change
+  const [view, setView] = useState('main');
+  useEffect(() => { setView('main'); }, [activeSession?.id]);
+
+  // Session-scoped event accumulator — survives WS reconnects, resets on session change
+  const [sessionEvents, setSessionEvents] = useState([]);
+  useEffect(() => { setSessionEvents([]); }, [activeSession?.id]);
+  useEffect(() => {
+    if (!wsMessages || wsMessages.length === 0) return;
+    const last = wsMessages[wsMessages.length - 1];
+    if (last) setSessionEvents(prev => [...prev.slice(-199), last]);
+  }, [wsMessages]);
 
   return (
     <div>
@@ -52,17 +66,42 @@ export function DashboardPage() {
           <div className="right-column">
             {activeSession ? (
               <>
-                <QuestionsFeed
-                  sessionId={activeSession.id}
-                  token={token}
-                  wsMessages={wsMessages}
-                />
-                <ClustersPanel
-                  sessionId={activeSession.id}
-                  token={token}
-                  wsMessages={wsMessages}
-                  approveFirstRef={approveFirstRef}
-                />
+                <div className="tab-bar">
+                  <button
+                    className={`tab-btn${view === 'main' ? ' active' : ''}`}
+                    onClick={() => setView('main')}
+                  >
+                    Questions &amp; Clusters
+                  </button>
+                  <button
+                    className={`tab-btn${view === 'analytics' ? ' active' : ''}`}
+                    onClick={() => setView('analytics')}
+                  >
+                    Analytics
+                  </button>
+                </div>
+
+                {view === 'main' ? (
+                  <>
+                    <QuestionsFeed
+                      sessionId={activeSession.id}
+                      token={token}
+                      wsMessages={wsMessages}
+                    />
+                    <ClustersPanel
+                      sessionId={activeSession.id}
+                      token={token}
+                      wsMessages={wsMessages}
+                      approveFirstRef={approveFirstRef}
+                    />
+                  </>
+                ) : (
+                  <AnalyticsPanel
+                    sessionId={activeSession.id}
+                    token={token}
+                    sessionEvents={sessionEvents}
+                  />
+                )}
               </>
             ) : (
               <p className="text-muted">Select or create a session to begin.</p>
