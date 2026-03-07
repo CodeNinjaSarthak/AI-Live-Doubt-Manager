@@ -78,6 +78,7 @@ cd '${DIRS[$i]}' && echo -e '\033[1;34m=== ${NAMES[$i]} ===\033[0m' && ${CMDS[$i
 
 # Create session with first pane
 tmux new-session -d -s "$SESSION" -x "$(tput cols)" -y "$(tput lines)"
+tmux set-option -t "$SESSION" mouse on
 tmux send-keys -t "$SESSION:0" "$(pane_cmd 0)" Enter
 
 # Add remaining panes

@@ -63,9 +63,15 @@ def main() -> None:
                             ),
                             {"centroid": vector_to_literal(cluster.centroid_embedding)}
                         ).fetchall()
-                        context = "\n\n".join(r.content for r in rows) if rows else "No context available."
+                        context = "\n\n".join(r.content for r in rows) if rows else None
 
                         questions_text = "\n".join(f"- {q}" for q in question_texts)
+                        if context:
+                            logger.debug("RAG context found, using %d chunks for cluster %s", len(rows), cluster_id)
+                        else:
+                            logger.info(
+                                "No RAG context for cluster %s — using general knowledge fallback", cluster_id
+                            )
                         answer_text = gemini_client.generate_answer(questions_text, context)
 
                         answer = Answer(

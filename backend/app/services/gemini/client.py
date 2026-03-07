@@ -71,22 +71,31 @@ class GeminiClient:
             return result
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
-    def generate_answer(self, question: str, context: str) -> str:
-        """Generate an answer for the given question(s) using context.
+    def generate_answer(self, question: str, context: str | None) -> str:
+        """Generate an answer for the given question(s).
 
         Args:
             question: Question text (may be multiple questions joined by newlines).
-            context: RAG context to ground the answer.
+            context: RAG context to ground the answer, or None if unavailable.
 
         Returns:
             Answer text.
         """
         with self._semaphore:
-            prompt = (
-                f"Answer the following student question(s) using the provided context.\n"
-                f"Context:\n{context}\n\n"
-                f"Question(s):\n{question}"
-            )
+            if context:
+                prompt = (
+                    f"You are a teaching assistant answering student questions during a live class.\n"
+                    f"Answer concisely and clearly using only the provided context.\n\n"
+                    f"Context:\n{context}\n\n"
+                    f"Question(s):\n{question}"
+                )
+            else:
+                prompt = (
+                    f"You are a teaching assistant answering student questions during a live class.\n"
+                    f"No teacher-uploaded context is available. Answer concisely and clearly "
+                    f"using your general knowledge.\n\n"
+                    f"Question(s):\n{question}"
+                )
             response = self._client.models.generate_content(
                 model=settings.gemini_model, contents=prompt
             )
