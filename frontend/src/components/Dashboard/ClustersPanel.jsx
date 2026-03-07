@@ -145,7 +145,7 @@ export function ClustersPanel({ sessionId, token, wsMessages, approveFirstRef })
   });
 
   return (
-    <section className="panel">
+    <section className="panel panel-scrollable panel-clusters">
       <h2>Clusters &amp; Answers</h2>
 
       <div className="filter-tabs">

@@ -82,7 +82,7 @@ export function DashboardPage() {
                 </div>
 
                 {view === 'main' ? (
-                  <>
+                  <div className="tab-view-panels">
                     <QuestionsFeed
                       sessionId={activeSession.id}
                       token={token}
@@ -94,13 +94,15 @@ export function DashboardPage() {
                       wsMessages={wsMessages}
                       approveFirstRef={approveFirstRef}
                     />
-                  </>
+                  </div>
                 ) : (
-                  <AnalyticsPanel
-                    sessionId={activeSession.id}
-                    token={token}
-                    sessionEvents={sessionEvents}
-                  />
+                  <div className="analytics-scroll-wrapper">
+                    <AnalyticsPanel
+                      sessionId={activeSession.id}
+                      token={token}
+                      sessionEvents={sessionEvents}
+                    />
+                  </div>
                 )}
               </>
             ) : (

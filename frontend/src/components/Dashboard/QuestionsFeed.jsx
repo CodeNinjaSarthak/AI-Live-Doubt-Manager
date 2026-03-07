@@ -85,7 +85,7 @@ export function QuestionsFeed({ sessionId, token, wsMessages }) {
     : comments;
 
   return (
-    <section className="panel">
+    <section className="panel panel-scrollable panel-feed">
       <h2>
         Live Feed{' '}
         <span className="badge">{comments.length}</span>
