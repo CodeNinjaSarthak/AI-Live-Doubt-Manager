@@ -23,7 +23,6 @@ sys.path.insert(0, os.path.join(_project_root, "backend"))
 
 from app.core.encryption import decrypt_data
 from app.db.models.answer import Answer
-from app.db.models.cluster import Cluster
 from app.db.models.streaming_session import StreamingSession
 from app.db.models.youtube_token import YouTubeToken
 from app.services.websocket.events import event_service
@@ -89,7 +88,6 @@ def main() -> None:
                         logger.warning(f"Answer {answer_id} not found")
                         break
 
-                    cluster = db.query(Cluster).filter_by(id=answer.cluster_id).first()
                     session = db.query(StreamingSession).filter_by(id=session_id).first()
                     if not session:
                         logger.warning(f"Session {session_id} not found")

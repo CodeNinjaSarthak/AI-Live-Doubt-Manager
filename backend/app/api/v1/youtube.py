@@ -2,8 +2,6 @@
 
 import json
 import logging
-from typing import Optional
-from uuid import uuid4
 
 import redis as redis_lib
 from app.core.config import settings
@@ -26,7 +24,6 @@ from fastapi import (
 )
 from fastapi.responses import (
     HTMLResponse,
-    RedirectResponse,
 )
 from sqlalchemy.orm import Session
 

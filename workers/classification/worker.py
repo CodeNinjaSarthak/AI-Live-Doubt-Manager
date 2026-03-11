@@ -11,7 +11,6 @@ _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 sys.path.insert(0, _project_root)
 sys.path.insert(0, os.path.join(_project_root, "backend"))
 
-import json
 
 from app.db.models.comment import Comment
 from app.services.gemini.client import GeminiClient

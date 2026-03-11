@@ -197,14 +197,14 @@ async def get_session_stats(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     total_comments = db.query(Comment).filter(Comment.session_id == session_id).count()
-    questions = db.query(Comment).filter(Comment.session_id == session_id, Comment.is_question == True).count()
-    answered = db.query(Comment).filter(Comment.session_id == session_id, Comment.is_answered == True).count()
+    questions = db.query(Comment).filter(Comment.session_id == session_id, Comment.is_question.is_(True)).count()
+    answered = db.query(Comment).filter(Comment.session_id == session_id, Comment.is_answered.is_(True)).count()
     clusters = db.query(Cluster).filter(Cluster.session_id == session_id).count()
 
     cluster_ids = [r.id for r in db.query(Cluster.id).filter(Cluster.session_id == session_id).all()]
     answers_generated = db.query(Answer).filter(Answer.cluster_id.in_(cluster_ids)).count() if cluster_ids else 0
     answers_posted = (
-        db.query(Answer).filter(Answer.cluster_id.in_(cluster_ids), Answer.is_posted == True).count()
+        db.query(Answer).filter(Answer.cluster_id.in_(cluster_ids), Answer.is_posted.is_(True)).count()
         if cluster_ids
         else 0
     )

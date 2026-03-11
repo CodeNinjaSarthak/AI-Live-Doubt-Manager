@@ -10,7 +10,6 @@ from datetime import (
 from typing import (
     Any,
     Dict,
-    Optional,
 )
 
 from app.core.config import settings

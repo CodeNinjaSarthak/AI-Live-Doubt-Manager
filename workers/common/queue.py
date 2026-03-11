@@ -198,7 +198,7 @@ class QueueManager:
 
         if retry_count >= max_retries:
             logger.warning(
-                f"Task exceeded max retries, moving to DLQ",
+                "Task exceeded max retries, moving to DLQ",
                 extra={"task_id": payload.get("task_id"), "queue": queue_name},
             )
             return self.move_to_dlq(queue_name, payload)
@@ -210,7 +210,7 @@ class QueueManager:
             task_data = json.dumps(payload)
             self.redis_client.zadd(queue_name, {task_data: score})
             logger.info(
-                f"Task requeued for retry",
+                "Task requeued for retry",
                 extra={"task_id": payload.get("task_id"), "queue": queue_name, "retry_count": payload["retry_count"]},
             )
             return True
@@ -234,7 +234,7 @@ class QueueManager:
         try:
             task_data = json.dumps(payload)
             self.redis_client.zadd(dlq_name, {task_data: time.time()})
-            logger.error(f"Task moved to DLQ", extra={"task_id": payload.get("task_id"), "dlq": dlq_name})
+            logger.error("Task moved to DLQ", extra={"task_id": payload.get("task_id"), "dlq": dlq_name})
             return True
         except Exception as e:
             logger.error(f"Failed to move task to DLQ: {e}")

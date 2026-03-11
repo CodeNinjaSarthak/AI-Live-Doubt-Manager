@@ -1,6 +1,5 @@
 """Streaming session statistics service."""
 
-from typing import Optional
 
 
 class SessionStatsService:

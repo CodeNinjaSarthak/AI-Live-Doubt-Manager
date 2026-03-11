@@ -1,7 +1,6 @@
 """Metrics collection for workers."""
 
 from typing import (
-    Any,
     Dict,
 )
 

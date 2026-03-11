@@ -208,7 +208,7 @@ async def get_session_analytics(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
     # Totals
-    total_questions = db.query(Comment).filter(Comment.session_id == session_id, Comment.is_question == True).count()
+    total_questions = db.query(Comment).filter(Comment.session_id == session_id, Comment.is_question.is_(True)).count()
 
     clusters = db.query(Cluster).filter(Cluster.session_id == session_id).all()
     total_clusters = len(clusters)
@@ -220,7 +220,7 @@ async def get_session_analytics(
         .join(Cluster, Answer.cluster_id == Cluster.id)
         .filter(
             Cluster.session_id == session_id,
-            Answer.is_posted == True,
+            Answer.is_posted.is_(True),
         )
         .scalar()
         or 0
@@ -233,7 +233,7 @@ async def get_session_analytics(
             func.date_trunc("hour", Comment.created_at).label("hour"),
             func.count().label("count"),
         )
-        .filter(Comment.session_id == session_id, Comment.is_question == True)
+        .filter(Comment.session_id == session_id, Comment.is_question.is_(True))
         .group_by(func.date_trunc("hour", Comment.created_at))
         .order_by(func.date_trunc("hour", Comment.created_at))
         .all()

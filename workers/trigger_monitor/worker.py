@@ -2,7 +2,6 @@
 
 import logging
 import os
-import sys
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,10 +13,9 @@ def main() -> None:
 
     # Read environment variables
     redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    database_url = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost/dbname")
 
     logger.info(f"Redis URL: {redis_url}")
-    logger.info(f"Database URL configured")
+    logger.info("Database URL configured")
 
     logger.info("Trigger monitor worker started successfully")
 

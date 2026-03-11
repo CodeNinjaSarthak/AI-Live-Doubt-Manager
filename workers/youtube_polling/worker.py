@@ -4,7 +4,6 @@ Polls all active sessions in parallel using ThreadPoolExecutor.
 Each thread gets its own DB session and Redis client.
 """
 
-import json
 import logging
 import os
 import signal
@@ -14,11 +13,7 @@ from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
 )
-from datetime import (
-    datetime,
-    timezone,
-)
-from typing import Optional
+from datetime import datetime
 
 # Ensure project root is on sys.path (for 'workers' package) and
 # backend/ is on sys.path (for 'app' package).
@@ -197,7 +192,7 @@ def main() -> None:
                 rows = (
                     db.query(StreamingSession.id)
                     .filter(
-                        StreamingSession.is_active == True,
+                        StreamingSession.is_active.is_(True),
                         StreamingSession.youtube_video_id.isnot(None),
                     )
                     .all()

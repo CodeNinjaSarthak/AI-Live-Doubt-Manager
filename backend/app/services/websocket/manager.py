@@ -10,9 +10,7 @@ from typing import (
     Any,
     Dict,
     Optional,
-    Set,
 )
-from uuid import UUID
 
 from app.core.config import settings
 from fastapi import (
@@ -73,7 +71,7 @@ class WebSocketManager:
         self.active_connections[session_id][connection_id] = conn_info
 
         logger.info(
-            f"WebSocket connected",
+            "WebSocket connected",
             extra={
                 "session_id": session_id,
                 "connection_id": connection_id,
@@ -97,7 +95,7 @@ class WebSocketManager:
             if connection_id in self.active_connections[session_id]:
                 del self.active_connections[session_id][connection_id]
                 logger.info(
-                    f"WebSocket disconnected", extra={"session_id": session_id, "connection_id": connection_id}
+                    "WebSocket disconnected", extra={"session_id": session_id, "connection_id": connection_id}
                 )
 
             if not self.active_connections[session_id]:

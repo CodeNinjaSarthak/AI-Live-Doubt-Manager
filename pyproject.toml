@@ -31,6 +31,10 @@ exclude = [
 ]
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]
+"workers/*/worker.py" = ["E402"]
+"workers/runner.py" = ["E402"]
+"backend/alembic/*" = ["E402", "F401"]
+"backend/app/main.py" = ["E402"]
 
 [tool.flake8]
 max-line-length = 119

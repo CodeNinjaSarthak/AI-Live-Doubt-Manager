@@ -68,7 +68,7 @@ def main() -> None:
                                 for c in db.query(Comment)
                                 .filter(
                                     Comment.session_id == comment.session_id,
-                                    Comment.is_question == True,
+                                    Comment.is_question.is_(True),
                                     Comment.embedding.isnot(None),
                                     Comment.cluster_id.is_(None),
                                 )

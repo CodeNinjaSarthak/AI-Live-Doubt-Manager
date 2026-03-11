@@ -1,6 +1,5 @@
 """Text processing utilities."""
 
-import re
 from typing import List
 
 
