@@ -5,11 +5,14 @@ import logging
 import threading
 
 import numpy as np
+from app.core.config import settings
 from google import genai
 from google.genai import types
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-from app.core.config import settings
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 logger = logging.getLogger(__name__)
 

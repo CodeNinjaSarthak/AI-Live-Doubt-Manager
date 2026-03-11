@@ -10,7 +10,10 @@ import os
 import signal
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import (
+    datetime,
+    timezone,
+)
 
 # Ensure project root is on sys.path (for 'workers' package) and
 # backend/ is on sys.path (for 'app' package).
@@ -26,8 +29,12 @@ from app.db.models.youtube_token import YouTubeToken
 from app.services.websocket.events import event_service
 from app.services.youtube.client import YouTubeClient
 from app.services.youtube.quota import YouTubeQuotaService
+
 from workers.common.db import get_db_session
-from workers.common.queue import QueueManager, QUEUE_YOUTUBE_POSTING
+from workers.common.queue import (
+    QUEUE_YOUTUBE_POSTING,
+    QueueManager,
+)
 from workers.common.redis import get_redis_client
 
 logging.basicConfig(

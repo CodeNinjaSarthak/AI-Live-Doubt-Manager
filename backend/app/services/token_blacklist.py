@@ -1,7 +1,6 @@
 """Redis-based JWT token blacklist for logout support."""
 
 import redis
-
 from app.core.config import settings
 
 

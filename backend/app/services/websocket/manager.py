@@ -2,13 +2,23 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Set
+from datetime import (
+    datetime,
+    timezone,
+)
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Set,
+)
 from uuid import UUID
 
-from fastapi import WebSocket, WebSocketDisconnect
-
 from app.core.config import settings
+from fastapi import (
+    WebSocket,
+    WebSocketDisconnect,
+)
 
 logger = logging.getLogger(__name__)
 

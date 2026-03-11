@@ -3,17 +3,22 @@
 import io
 import logging
 import re
-from uuid import UUID
 from typing import List
+from uuid import UUID
 
-from fastapi import UploadFile, HTTPException
-import pypdf
 import docx
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-
+import pypdf
 from app.db.models.rag import RAGDocument
-from app.services.gemini.client import GeminiClient, vector_to_literal
+from app.services.gemini.client import (
+    GeminiClient,
+    vector_to_literal,
+)
+from fastapi import (
+    HTTPException,
+    UploadFile,
+)
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 

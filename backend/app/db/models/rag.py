@@ -1,14 +1,26 @@
 """RAG (Retrieval Augmented Generation) model."""
 
 import uuid
-from datetime import datetime, timezone
-
-from sqlalchemy import Column, DateTime, ForeignKey, Index, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
-from pgvector.sqlalchemy import Vector
+from datetime import (
+    datetime,
+    timezone,
+)
 
 from app.db.base import Base
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import (
+    JSONB,
+    UUID,
+)
+from sqlalchemy.orm import relationship
 
 
 class RAGDocument(Base):

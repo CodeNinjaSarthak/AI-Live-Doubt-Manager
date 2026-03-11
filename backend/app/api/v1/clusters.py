@@ -2,17 +2,24 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-
 from app.core.security import get_current_active_user
-from app.db.session import get_db
 from app.db.models.cluster import Cluster
 from app.db.models.comment import Comment
 from app.db.models.streaming_session import StreamingSession
 from app.db.models.teacher import Teacher
-from app.schemas.cluster import ClusterResponse, ClusterUpdate
+from app.db.session import get_db
+from app.schemas.cluster import (
+    ClusterResponse,
+    ClusterUpdate,
+)
 from app.schemas.comment import CommentResponse
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/clusters", tags=["clusters"])
 

@@ -4,7 +4,10 @@ import json
 import logging
 import os
 import sys
-from typing import Any, Optional
+from typing import (
+    Any,
+    Optional,
+)
 
 import redis
 from redis import ConnectionPool

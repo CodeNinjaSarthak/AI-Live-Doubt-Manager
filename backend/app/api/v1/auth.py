@@ -1,10 +1,10 @@
 """Authentication API routes."""
 
-from datetime import datetime, timedelta, timezone
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
+from datetime import (
+    datetime,
+    timedelta,
+    timezone,
+)
 
 from app.core.config import settings
 from app.core.security import (
@@ -16,7 +16,6 @@ from app.core.security import (
     verify_password,
     verify_token,
 )
-from app.services.token_blacklist import token_blacklist
 from app.db.models.teacher import Teacher
 from app.db.session import get_db
 from app.schemas.auth import (
@@ -28,6 +27,15 @@ from app.schemas.auth import (
     Token,
     UpdateProfileRequest,
 )
+from app.services.token_blacklist import token_blacklist
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
+from fastapi.security import HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

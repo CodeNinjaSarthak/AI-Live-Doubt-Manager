@@ -1,7 +1,11 @@
 """WebSocket message schemas."""
 
+from typing import (
+    Literal,
+    Optional,
+)
+
 from pydantic import BaseModel
-from typing import Optional, Literal
 
 
 class WebSocketMessage(BaseModel):

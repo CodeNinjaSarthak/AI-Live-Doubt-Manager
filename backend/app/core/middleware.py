@@ -3,12 +3,17 @@
 import time
 import uuid
 from contextvars import ContextVar
-from typing import Callable, Optional
-
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
+from typing import (
+    Callable,
+    Optional,
+)
 
 from app.core.logging import get_logger
+from fastapi import (
+    Request,
+    Response,
+)
+from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = get_logger(__name__)
 

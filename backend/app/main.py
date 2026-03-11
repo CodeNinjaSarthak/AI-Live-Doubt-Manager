@@ -12,17 +12,15 @@ import logging
 import os
 
 import redis.asyncio as aioredis
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-
 from app.api.v1 import (
     answers,
     auth,
     clusters,
     comments,
     dashboard,
-    metrics as metrics_v1,
+)
+from app.api.v1 import metrics as metrics_v1
+from app.api.v1 import (
     rag,
     sessions,
     websocket,
@@ -34,6 +32,9 @@ from app.core.metrics import metrics_endpoint
 from app.core.middleware import RequestContextMiddleware
 from app.core.rate_limit_middleware import RateLimitMiddleware
 from app.services.websocket.manager import manager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 setup_logging()
 logger = logging.getLogger(__name__)

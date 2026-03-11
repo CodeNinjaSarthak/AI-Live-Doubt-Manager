@@ -1,19 +1,32 @@
 """Security utilities for authentication and authorization."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import (
+    datetime,
+    timedelta,
+    timezone,
+)
 from typing import Optional
 from uuid import UUID
 
 import bcrypt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
-from sqlalchemy.orm import Session
-
 from app.core.config import settings
 from app.db.models.teacher import Teacher
 from app.db.session import get_db
 from app.services.token_blacklist import token_blacklist
+from fastapi import (
+    Depends,
+    HTTPException,
+    status,
+)
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+)
+from jose import (
+    JWTError,
+    jwt,
+)
+from sqlalchemy.orm import Session
 
 security_scheme = HTTPBearer()
 

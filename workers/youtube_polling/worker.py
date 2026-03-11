@@ -10,8 +10,14 @@ import os
 import signal
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from concurrent.futures import (
+    ThreadPoolExecutor,
+    as_completed,
+)
+from datetime import (
+    datetime,
+    timezone,
+)
 from typing import Optional
 
 # Ensure project root is on sys.path (for 'workers' package) and
@@ -20,17 +26,23 @@ _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 sys.path.insert(0, _project_root)
 sys.path.insert(0, os.path.join(_project_root, "backend"))
 
-from googleapiclient.errors import HttpError
-
-from app.core.encryption import decrypt_data, encrypt_data
+from app.core.encryption import (
+    decrypt_data,
+    encrypt_data,
+)
 from app.db.models.comment import Comment
 from app.db.models.streaming_session import StreamingSession
 from app.db.models.youtube_token import YouTubeToken
 from app.services.youtube.client import YouTubeClient
 from app.services.youtube.oauth import YouTubeOAuthService
 from app.services.youtube.quota import YouTubeQuotaService
+from googleapiclient.errors import HttpError
+
 from workers.common.db import get_db_session
-from workers.common.queue import QueueManager, QUEUE_CLASSIFICATION
+from workers.common.queue import (
+    QUEUE_CLASSIFICATION,
+    QueueManager,
+)
 from workers.common.redis import get_redis_client
 from workers.common.schemas import ClassificationPayload
 

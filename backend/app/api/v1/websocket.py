@@ -4,13 +4,17 @@ import json
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
-
 from app.core.security import verify_token
 from app.db.models.streaming_session import StreamingSession
 from app.db.session import SessionLocal
 from app.services.websocket.events import event_service
 from app.services.websocket.manager import manager
+from fastapi import (
+    APIRouter,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
 
 router = APIRouter(tags=["websocket"])
 logger = logging.getLogger(__name__)

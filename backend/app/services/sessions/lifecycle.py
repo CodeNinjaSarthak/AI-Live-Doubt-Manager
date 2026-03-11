@@ -1,7 +1,7 @@
 """Streaming session lifecycle management."""
 
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
 
 class SessionLifecycleService:

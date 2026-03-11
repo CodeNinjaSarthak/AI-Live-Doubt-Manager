@@ -1,23 +1,38 @@
 """Streaming sessions API routes."""
 
-from datetime import datetime, timezone
-from uuid import UUID
+from datetime import (
+    datetime,
+    timezone,
+)
 from typing import List
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func
-from sqlalchemy.orm import Session, selectinload
+from uuid import UUID
 
 from app.core.security import get_current_active_user
-from app.db.session import get_db
-from app.db.models.streaming_session import StreamingSession
-from app.db.models.comment import Comment
-from app.db.models.cluster import Cluster
 from app.db.models.answer import Answer
+from app.db.models.cluster import Cluster
+from app.db.models.comment import Comment
+from app.db.models.streaming_session import StreamingSession
 from app.db.models.teacher import Teacher
-from app.schemas.session import SessionCreate, SessionUpdate, SessionResponse, SessionAnalyticsResponse
-from app.schemas.comment import CommentResponse
+from app.db.session import get_db
 from app.schemas.cluster import ClusterResponse
+from app.schemas.comment import CommentResponse
+from app.schemas.session import (
+    SessionAnalyticsResponse,
+    SessionCreate,
+    SessionResponse,
+    SessionUpdate,
+)
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
+from sqlalchemy import func
+from sqlalchemy.orm import (
+    Session,
+    selectinload,
+)
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 

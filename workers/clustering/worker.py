@@ -12,12 +12,17 @@ sys.path.insert(0, _project_root)
 sys.path.insert(0, os.path.join(_project_root, "backend"))
 
 import numpy as np
-from sklearn.cluster import KMeans
-from workers.common.queue import QueueManager, QUEUE_CLUSTERING, QUEUE_ANSWER_GENERATION
-from workers.common.db import get_db_session
-from workers.common.schemas import AnswerGenerationPayload
-from app.db.models.comment import Comment
 from app.db.models.cluster import Cluster
+from app.db.models.comment import Comment
+from sklearn.cluster import KMeans
+
+from workers.common.db import get_db_session
+from workers.common.queue import (
+    QUEUE_ANSWER_GENERATION,
+    QUEUE_CLUSTERING,
+    QueueManager,
+)
+from workers.common.schemas import AnswerGenerationPayload
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

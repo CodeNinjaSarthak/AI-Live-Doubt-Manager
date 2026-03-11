@@ -1,14 +1,16 @@
 """Auth-gated JSON metrics endpoint."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
 from app.core.security import get_current_active_user
 from app.db.models.answer import Answer
 from app.db.models.comment import Comment
 from app.db.models.streaming_session import StreamingSession
 from app.db.models.teacher import Teacher
 from app.db.session import get_db
+from fastapi import (
+    APIRouter,
+    Depends,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/metrics", tags=["metrics"])
 

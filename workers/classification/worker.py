@@ -12,11 +12,17 @@ sys.path.insert(0, _project_root)
 sys.path.insert(0, os.path.join(_project_root, "backend"))
 
 import json
-from workers.common.queue import QueueManager, QUEUE_CLASSIFICATION, QUEUE_EMBEDDING
-from workers.common.db import get_db_session
-from workers.common.schemas import EmbeddingPayload
-from app.services.gemini.client import GeminiClient
+
 from app.db.models.comment import Comment
+from app.services.gemini.client import GeminiClient
+
+from workers.common.db import get_db_session
+from workers.common.queue import (
+    QUEUE_CLASSIFICATION,
+    QUEUE_EMBEDDING,
+    QueueManager,
+)
+from workers.common.schemas import EmbeddingPayload
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

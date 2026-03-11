@@ -1,13 +1,23 @@
 """Quota model."""
 
 import uuid
-from datetime import datetime, timezone
-
-from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from datetime import (
+    datetime,
+    timezone,
+)
 
 from app.db.base import Base
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 
 class Quota(Base):

@@ -3,9 +3,12 @@
 from functools import wraps
 from typing import Callable
 
-from fastapi import HTTPException, Request, status
-
 from app.services.rate_limiter import RateLimiter
+from fastapi import (
+    HTTPException,
+    Request,
+    status,
+)
 
 _rate_limiter = RateLimiter()
 

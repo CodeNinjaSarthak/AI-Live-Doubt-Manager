@@ -1,11 +1,16 @@
 """Prometheus metrics for observability."""
 
-from prometheus_client import Counter, Gauge, Histogram, Summary
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from app.core.config import settings
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    Gauge,
+    Histogram,
+    Summary,
+    generate_latest,
+)
 from starlette.requests import Request
 from starlette.responses import Response
-
-from app.core.config import settings
 
 http_requests_total = Counter("http_requests_total", "Total HTTP requests", ["method", "endpoint", "status"])
 

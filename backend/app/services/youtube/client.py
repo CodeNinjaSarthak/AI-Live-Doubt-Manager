@@ -3,11 +3,10 @@
 import logging
 from typing import Optional
 
+from app.core.config import settings
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 

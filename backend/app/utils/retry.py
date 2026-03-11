@@ -1,8 +1,12 @@
 """Retry utility functions."""
 
 import asyncio
-from typing import Callable, TypeVar, Any
 from functools import wraps
+from typing import (
+    Any,
+    Callable,
+    TypeVar,
+)
 
 T = TypeVar("T")
 

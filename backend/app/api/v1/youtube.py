@@ -6,18 +6,29 @@ from typing import Optional
 from uuid import uuid4
 
 import redis as redis_lib
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy.orm import Session
-
 from app.core.config import settings
-from app.core.encryption import decrypt_data, encrypt_data
+from app.core.encryption import (
+    decrypt_data,
+    encrypt_data,
+)
 from app.core.security import get_current_active_user
 from app.db.models.teacher import Teacher
 from app.db.models.youtube_token import YouTubeToken
 from app.db.session import get_db
 from app.services.youtube.client import YouTubeClient
 from app.services.youtube.oauth import YouTubeOAuthService
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    status,
+)
+from fastapi.responses import (
+    HTMLResponse,
+    RedirectResponse,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/youtube", tags=["youtube"])
 logger = logging.getLogger(__name__)

@@ -1,10 +1,9 @@
 """ASGI middleware for Redis-based rate limiting."""
 
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from app.core.config import settings
 from app.services.rate_limiter import RateLimiter
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 SKIP_PATHS = {"/", "/health", "/metrics", "/docs", "/openapi.json", "/redoc"}
 

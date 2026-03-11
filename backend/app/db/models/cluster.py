@@ -1,14 +1,25 @@
 """Cluster model."""
 
 import uuid
-from datetime import datetime, timezone
-
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
-from pgvector.sqlalchemy import Vector
+from datetime import (
+    datetime,
+    timezone,
+)
 
 from app.db.base import Base
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 
 class Cluster(Base):

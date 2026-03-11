@@ -1,9 +1,8 @@
 """YouTube OAuth service."""
 
-from google_auth_oauthlib.flow import Flow
-
 from app.core.config import settings
 from app.services.youtube.client import YouTubeClient
+from google_auth_oauthlib.flow import Flow
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.readonly",

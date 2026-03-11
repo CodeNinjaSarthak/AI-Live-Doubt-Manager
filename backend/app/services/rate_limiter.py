@@ -3,7 +3,6 @@
 import time
 
 import redis
-
 from app.core.config import settings
 
 

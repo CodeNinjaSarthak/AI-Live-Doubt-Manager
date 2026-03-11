@@ -1,8 +1,15 @@
 """WebSocket event handlers and event builders."""
 
-from datetime import datetime, timezone
+from datetime import (
+    datetime,
+    timezone,
+)
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import (
+    Any,
+    Dict,
+    Optional,
+)
 
 
 class WebSocketEventType(str, Enum):

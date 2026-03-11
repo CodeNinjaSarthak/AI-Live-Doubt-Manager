@@ -1,12 +1,17 @@
 """RAG document management endpoints."""
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from sqlalchemy.orm import Session
-
 from app.core.security import get_current_active_user
-from app.db.session import get_db
 from app.db.models.rag import RAGDocument
+from app.db.session import get_db
 from app.services.rag.document_service import upload_document
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 

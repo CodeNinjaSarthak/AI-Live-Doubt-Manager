@@ -11,15 +11,23 @@ _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 sys.path.insert(0, _project_root)
 sys.path.insert(0, os.path.join(_project_root, "backend"))
 
-from sqlalchemy import text
-from workers.common.queue import QueueManager, QUEUE_ANSWER_GENERATION, QUEUE_YOUTUBE_POSTING
-from workers.common.db import get_db_session
-from workers.common.schemas import YouTubePostingPayload
-from app.services.gemini.client import GeminiClient, vector_to_literal
-from app.db.models.cluster import Cluster
 from app.db.models.answer import Answer
+from app.db.models.cluster import Cluster
 from app.db.models.streaming_session import StreamingSession
 from app.db.models.youtube_token import YouTubeToken
+from app.services.gemini.client import (
+    GeminiClient,
+    vector_to_literal,
+)
+from sqlalchemy import text
+
+from workers.common.db import get_db_session
+from workers.common.queue import (
+    QUEUE_ANSWER_GENERATION,
+    QUEUE_YOUTUBE_POSTING,
+    QueueManager,
+)
+from workers.common.schemas import YouTubePostingPayload
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

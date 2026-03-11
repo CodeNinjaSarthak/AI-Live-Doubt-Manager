@@ -1,6 +1,9 @@
 """Metrics collection for workers."""
 
-from typing import Dict, Any
+from typing import (
+    Any,
+    Dict,
+)
 
 
 def record_metric(name: str, value: float, tags: Dict[str, str] = None) -> None:

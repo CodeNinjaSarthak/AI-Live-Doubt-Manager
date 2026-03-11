@@ -1,18 +1,29 @@
 """Answers API routes."""
 
-from datetime import datetime, timezone
+from datetime import (
+    datetime,
+    timezone,
+)
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-
 from app.core.security import get_current_active_user
-from app.db.session import get_db
 from app.db.models.answer import Answer
 from app.db.models.cluster import Cluster
 from app.db.models.streaming_session import StreamingSession
 from app.db.models.teacher import Teacher
-from app.schemas.answer import AnswerCreate, AnswerResponse, AnswerUpdate
+from app.db.session import get_db
+from app.schemas.answer import (
+    AnswerCreate,
+    AnswerResponse,
+    AnswerUpdate,
+)
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/answers", tags=["answers"])
 

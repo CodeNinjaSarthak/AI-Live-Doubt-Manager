@@ -2,12 +2,17 @@
 
 from typing import Generator
 
-from sqlalchemy import create_engine, event
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
-
 from app.core.config import settings
 from app.db.base import Base
+from sqlalchemy import (
+    create_engine,
+    event,
+)
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import (
+    Session,
+    sessionmaker,
+)
 
 # Create engine with connection pooling
 engine = create_engine(

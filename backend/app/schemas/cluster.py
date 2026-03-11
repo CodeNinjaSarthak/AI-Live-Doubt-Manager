@@ -1,9 +1,16 @@
 """Cluster schemas."""
 
 from datetime import datetime
+from typing import (
+    List,
+    Optional,
+)
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, List
+
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+)
 
 
 class ClusterBase(BaseModel):

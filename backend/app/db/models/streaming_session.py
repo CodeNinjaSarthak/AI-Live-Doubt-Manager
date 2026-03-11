@@ -1,13 +1,23 @@
 """Streaming session model."""
 
 import uuid
-from datetime import datetime, timezone
-
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, String, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from datetime import (
+    datetime,
+    timezone,
+)
 
 from app.db.base import Base
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 
 class StreamingSession(Base):

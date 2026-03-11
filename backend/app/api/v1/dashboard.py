@@ -1,12 +1,14 @@
 """Teacher dashboard API routes."""
 
 import logging
-from datetime import datetime, timezone
-from uuid import UUID, uuid4
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from datetime import (
+    datetime,
+    timezone,
+)
+from uuid import (
+    UUID,
+    uuid4,
+)
 
 from app.core.security import get_current_active_user
 from app.db.models.answer import Answer
@@ -16,7 +18,21 @@ from app.db.models.streaming_session import StreamingSession
 from app.db.models.teacher import Teacher
 from app.db.models.youtube_token import YouTubeToken
 from app.db.session import get_db
-from app.schemas.answer import AnswerResponse, AnswerUpdate
+from app.schemas.answer import (
+    AnswerResponse,
+    AnswerUpdate,
+)
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
+from pydantic import (
+    BaseModel,
+    Field,
+)
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 logger = logging.getLogger(__name__)
@@ -37,7 +53,10 @@ async def submit_manual_question(
 
     Supports bulk input: split on newlines, up to 10 questions per request.
     """
-    from workers.common.queue import QueueManager, QUEUE_CLASSIFICATION
+    from workers.common.queue import (
+        QUEUE_CLASSIFICATION,
+        QueueManager,
+    )
     from workers.common.schemas import ClassificationPayload
 
     session = (
@@ -86,7 +105,10 @@ async def approve_answer(
     db: Session = Depends(get_db),
 ) -> AnswerResponse:
     """Approve an answer — post to YouTube if connected, else mark posted immediately."""
-    from workers.common.queue import QueueManager, QUEUE_YOUTUBE_POSTING
+    from workers.common.queue import (
+        QUEUE_YOUTUBE_POSTING,
+        QueueManager,
+    )
     from workers.common.schemas import YouTubePostingPayload
 
     result = (

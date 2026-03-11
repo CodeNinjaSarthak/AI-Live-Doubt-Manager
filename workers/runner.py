@@ -1,9 +1,9 @@
 """Worker runner for orchestrating multiple workers."""
 
-import os
-import sys
 import logging
 import multiprocessing
+import os
+import sys
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
