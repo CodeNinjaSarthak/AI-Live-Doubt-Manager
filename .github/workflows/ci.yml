@@ -85,6 +85,7 @@ jobs:
 
       - name: Run migrations
         run: alembic upgrade head
+        working-directory: backend
 
       - name: Run tests
         run: pytest backend/tests workers -v --ignore-glob="*__init__*" || true
