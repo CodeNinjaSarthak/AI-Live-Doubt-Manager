@@ -94,9 +94,7 @@ class WebSocketManager:
         if session_id in self.active_connections:
             if connection_id in self.active_connections[session_id]:
                 del self.active_connections[session_id][connection_id]
-                logger.info(
-                    "WebSocket disconnected", extra={"session_id": session_id, "connection_id": connection_id}
-                )
+                logger.info("WebSocket disconnected", extra={"session_id": session_id, "connection_id": connection_id})
 
             if not self.active_connections[session_id]:
                 del self.active_connections[session_id]

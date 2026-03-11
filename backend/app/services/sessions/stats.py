@@ -1,7 +1,6 @@
 """Streaming session statistics service."""
 
 
-
 class SessionStatsService:
     """Service for calculating session statistics."""
 
