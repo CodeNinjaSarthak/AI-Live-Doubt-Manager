@@ -29,9 +29,8 @@ exclude = [
     "*.ipynb",
     "__pycache__",
 ]
-per-file-ignores = {
-    "__init__.py": ["E402"],
-}
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
 
 [tool.flake8]
 max-line-length = 119
