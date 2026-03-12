@@ -128,7 +128,7 @@ def main() -> None:
 
                     # Publish event for WebSocket relay
                     event = event_service.create_answer_posted_event(str(answer.id), str(answer.cluster_id))
-                    redis_client.publish(f"ws:session:{session_id}", json.dumps(event))
+                    redis_client.publish(f"ws:{session_id}", json.dumps(event))
                     logger.info(f"Posted answer {answer_id} to YouTube chat (msg_id={msg_id})")
 
                 finally:
