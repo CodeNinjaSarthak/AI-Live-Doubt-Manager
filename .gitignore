@@ -102,3 +102,4 @@ tmp/
 *.bak
 
 CLAUDE.md
+.claude
