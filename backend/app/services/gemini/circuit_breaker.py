@@ -1,5 +1,7 @@
 """Circuit breaker for Gemini API calls."""
 
+from __future__ import annotations
+
 import logging
 import time
 
@@ -57,6 +59,11 @@ class GeminiCircuitBreaker:
                 self._failure_count,
                 self._recovery_timeout,
             )
+            if self._state_change_callback:
+                self._state_change_callback(self.state)
+        elif self._state == "open" and self.state == "half_open":
+            self._opened_at = time.monotonic()
+            logger.warning("Gemini circuit breaker re-opened after failed probe")
             if self._state_change_callback:
                 self._state_change_callback(self.state)
 
