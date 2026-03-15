@@ -41,6 +41,57 @@ logger = logging.getLogger(__name__)
 POLL_INTERVAL = 1  # seconds
 
 
+def process_task(task, gemini_client, manager, db, redis_client):
+    """Process a single classification task.
+
+    Args:
+        task: Dequeued task payload dict.
+        gemini_client: GeminiClient instance.
+        manager: QueueManager instance.
+        db: SQLAlchemy session.
+        redis_client: Redis client for event publishing (may be None in tests).
+    """
+    comment_id = task.get("comment_id")
+    comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not comment:
+        logger.warning(f"Comment {comment_id} not found, skipping")
+        return
+    result = gemini_client.classify_question(comment.text)
+    comment.is_question = result["is_question"]
+    comment.confidence_score = result["confidence"]
+    db.commit()
+    if result["is_question"] and result["confidence"] > settings.classification_confidence_threshold:
+        manager.enqueue(
+            QUEUE_EMBEDDING,
+            EmbeddingPayload(comment_id=str(comment.id), text=comment.text).to_dict(),
+        )
+    elif result["is_question"]:
+        logger.warning(
+            "Question detected but below confidence threshold",
+            extra={
+                "comment_id": comment_id,
+                "confidence": result["confidence"],
+                "threshold": settings.classification_confidence_threshold,
+            },
+        )
+
+    # Publish event for WebSocket relay
+    if redis_client is not None:
+        event = event_service.create_comment_classified_event(
+            str(comment.id), result["is_question"], result["confidence"]
+        )
+        redis_client.publish(f"ws:{comment.session_id}", json.dumps(event))
+
+    logger.info(
+        "Classification complete",
+        extra={
+            "comment_id": comment_id,
+            "is_question": result["is_question"],
+            "confidence": result["confidence"],
+        },
+    )
+
+
 def main() -> None:
     """Main entry point for classification worker."""
     logger.info("Starting classification worker...")
@@ -66,49 +117,9 @@ def main() -> None:
                     continue
 
                 proc_start = time.time()
-                comment_id = task.get("comment_id")
                 for db in get_db_session():
                     try:
-                        comment = db.query(Comment).filter(Comment.id == comment_id).first()
-                        if not comment:
-                            logger.warning(f"Comment {comment_id} not found, skipping")
-                            break
-                        result = gemini_client.classify_question(comment.text)
-                        comment.is_question = result["is_question"]
-                        comment.confidence_score = result["confidence"]
-                        db.commit()
-                        if (
-                            result["is_question"]
-                            and result["confidence"] > settings.classification_confidence_threshold
-                        ):
-                            manager.enqueue(
-                                QUEUE_EMBEDDING,
-                                EmbeddingPayload(comment_id=str(comment.id), text=comment.text).to_dict(),
-                            )
-                        elif result["is_question"]:
-                            logger.warning(
-                                "Question detected but below confidence threshold",
-                                extra={
-                                    "comment_id": comment_id,
-                                    "confidence": result["confidence"],
-                                    "threshold": settings.classification_confidence_threshold,
-                                },
-                            )
-
-                        # Publish event for WebSocket relay
-                        event = event_service.create_comment_classified_event(
-                            str(comment.id), result["is_question"], result["confidence"]
-                        )
-                        redis_client.publish(f"ws:{comment.session_id}", json.dumps(event))
-
-                        logger.info(
-                            "Classification complete",
-                            extra={
-                                "comment_id": comment_id,
-                                "is_question": result["is_question"],
-                                "confidence": result["confidence"],
-                            },
-                        )
+                        process_task(task, gemini_client, manager, db, redis_client)
                     finally:
                         db.close()
                 record_processing("classification", time.time() - proc_start, True)
