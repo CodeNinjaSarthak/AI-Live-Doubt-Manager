@@ -11,18 +11,18 @@ _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _project_root)
 sys.path.insert(0, os.path.join(_project_root, "backend"))
 
-from app.db.models.answer import Answer
-from app.db.models.comment import Comment
-from app.db.models.streaming_session import StreamingSession
-from app.db.models.teacher import Teacher
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from app.db.models.answer import Answer  # noqa: E402
+from app.db.models.comment import Comment  # noqa: E402
+from app.db.models.streaming_session import StreamingSession  # noqa: E402
+from app.db.models.teacher import Teacher  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
 
-from workers.common.queue import (
+from workers.common.queue import (  # noqa: E402
     QUEUE_CLASSIFICATION,
     QueueManager,
 )
-from workers.common.schemas import ClassificationPayload
+from workers.common.schemas import ClassificationPayload  # noqa: E402
 
 DATABASE_URL = os.environ["DATABASE_URL"]
 engine = create_engine(DATABASE_URL)

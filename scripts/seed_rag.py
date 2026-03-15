@@ -1,13 +1,11 @@
 """Script to seed RAG documents."""
 
-import os
 import sys
 from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from backend.app.db.models.rag import RAGDocument
 from backend.app.db.session import SessionLocal
 
 

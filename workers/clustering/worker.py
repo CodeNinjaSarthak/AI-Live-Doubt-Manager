@@ -63,7 +63,6 @@ def main() -> None:
 
                 proc_start = time.time()
                 comment_id = task.get("comment_id")
-                session_id = task.get("session_id")
 
                 for db in get_db_session():
                     try:
@@ -153,6 +152,15 @@ def main() -> None:
                                 cluster.title = summary
                                 db.commit()
                                 logger.info(f"Cluster {cluster.id} title updated: {summary!r}")
+
+                                # Publish title update for WebSocket relay
+                                title_event_data = {
+                                    "id": str(cluster.id),
+                                    "title": cluster.title,
+                                    "comment_count": cluster.comment_count,
+                                }
+                                title_event = event_service.create_cluster_updated_event(title_event_data)
+                                redis_client.publish(f"ws:{comment.session_id}", json.dumps(title_event))
                             except Exception as e:
                                 logger.error(f"Failed to summarize cluster {cluster.id}: {e}")
 

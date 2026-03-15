@@ -1,6 +1,7 @@
 """Load testing script."""
 
 import asyncio
+import os
 import time
 from typing import List
 

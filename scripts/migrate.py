@@ -1,6 +1,5 @@
 """Database migration script."""
 
-import os
 import sys
 from pathlib import Path
 

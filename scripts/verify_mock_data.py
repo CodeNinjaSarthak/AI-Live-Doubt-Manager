@@ -9,15 +9,15 @@ sys.path.insert(0, os.path.join(_root, "backend"))
 
 os.environ.setdefault("ENVIRONMENT", "development")
 
-from app.db.models.answer import Answer
-from app.db.models.cluster import Cluster
-from app.db.models.comment import Comment
-from sqlalchemy import (
+from app.db.models.answer import Answer  # noqa: E402
+from app.db.models.cluster import Cluster  # noqa: E402
+from app.db.models.comment import Comment  # noqa: E402
+from sqlalchemy import (  # noqa: E402
     case,
     func,
 )
 
-from workers.common.db import get_db_session
+from workers.common.db import get_db_session  # noqa: E402
 
 
 def run():
@@ -38,7 +38,7 @@ def run():
             # ---------------------------------------------------------------
             # 2. Comments grouped by cluster — first 3 texts per cluster
             # ---------------------------------------------------------------
-            print(f"\n2) COMMENTS BY CLUSTER (first 3 per cluster)")
+            print("\n2) COMMENTS BY CLUSTER (first 3 per cluster)")
             print("-" * 60)
 
             # Unclustered
@@ -144,7 +144,7 @@ def run():
             print(f"   non-question:  {non_questions}  ({nq_pct:.1f}%)")
 
             # Expected: clusters A, B, D are questions (15/20 = 75%), C is not (5/20 = 25%)
-            print(f"\n   Expected ratio: ~75% questions / ~25% non-questions")
+            print("\n   Expected ratio: ~75% questions / ~25% non-questions")
             print(f"   Actual ratio:   {q_pct:.1f}% questions / {nq_pct:.1f}% non-questions")
 
             if 55 <= q_pct <= 90:
