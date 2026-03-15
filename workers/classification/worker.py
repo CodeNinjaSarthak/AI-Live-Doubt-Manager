@@ -30,6 +30,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 POLL_INTERVAL = 1  # seconds
+CONFIDENCE_THRESHOLD = 0.4
 
 
 def main() -> None:
@@ -59,10 +60,19 @@ def main() -> None:
                         comment.is_question = result["is_question"]
                         comment.confidence_score = result["confidence"]
                         db.commit()
-                        if result["is_question"]:
+                        if result["is_question"] and result["confidence"] > CONFIDENCE_THRESHOLD:
                             manager.enqueue(
                                 QUEUE_EMBEDDING,
                                 EmbeddingPayload(comment_id=str(comment.id), text=comment.text).to_dict(),
+                            )
+                        elif result["is_question"]:
+                            logger.warning(
+                                "Question detected but below confidence threshold",
+                                extra={
+                                    "comment_id": comment_id,
+                                    "confidence": result["confidence"],
+                                    "threshold": CONFIDENCE_THRESHOLD,
+                                },
                             )
 
                         # Publish event for WebSocket relay

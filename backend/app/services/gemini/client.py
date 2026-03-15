@@ -51,6 +51,30 @@ class GeminiClient:
 
             return normed_embedding.tolist()
 
+    CLASSIFICATION_SYSTEM_INSTRUCTION = (
+        "You are a Teaching Assistant for a Live Stream. Your job is to identify "
+        '"Student Doubts." A student doubt is any inquiry, confusion, or request '
+        "for clarification. Classify as a question if the student is seeking an "
+        "answer, even if they use informal language or omit question marks."
+    )
+
+    CLASSIFICATION_FEW_SHOT = (
+        "Examples:\n"
+        'Comment: "I dont get the list part" -> {"is_question": true, "confidence": 0.92}\n'
+        'Comment: "Wait, why is that true?" -> {"is_question": true, "confidence": 0.97}\n'
+        'Comment: "Hello from London" -> {"is_question": false, "confidence": 0.95}\n'
+        'Comment: "Can you repeat the last step?" -> {"is_question": true, "confidence": 0.96}\n'
+    )
+
+    CLASSIFICATION_RESPONSE_SCHEMA = {
+        "type": "object",
+        "properties": {
+            "is_question": {"type": "boolean"},
+            "confidence": {"type": "number"},
+        },
+        "required": ["is_question", "confidence"],
+    }
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
     def classify_question(self, text: str) -> dict:
         """Classify whether a comment is a question.
@@ -59,13 +83,17 @@ class GeminiClient:
             dict with keys 'is_question' (bool) and 'confidence' (float 0-1).
         """
         with self._semaphore:
-            prompt = (
-                f'Is this a question? Return JSON only: {{"is_question": bool, "confidence": float 0-1}}\n'
-                f"Comment: {text}"
+            prompt = f"{self.CLASSIFICATION_FEW_SHOT}\nComment: {text}"
+            response = self._client.models.generate_content(
+                model=settings.gemini_model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.CLASSIFICATION_SYSTEM_INSTRUCTION,
+                    response_mime_type="application/json",
+                    response_schema=self.CLASSIFICATION_RESPONSE_SCHEMA,
+                ),
             )
-            response = self._client.models.generate_content(model=settings.gemini_model, contents=prompt)
-            raw = response.text.strip().removeprefix("```json").removesuffix("```").strip()
-            result = json.loads(raw)
+            result = json.loads(response.text)
             logger.debug(
                 f"Classified comment: is_question={result.get('is_question')}, confidence={result.get('confidence')}"
             )
