@@ -9,10 +9,10 @@ prometheus.scrape "fastapi" {
 
 prometheus.remote_write "grafana_cloud" {
   endpoint {
-    url = env("GCLOUD_HOSTED_METRICS_URL")
+    url = sys.env("GCLOUD_HOSTED_METRICS_URL")
     basic_auth {
-      username = env("GCLOUD_HOSTED_METRICS_ID")
-      password = env("GCLOUD_RW_API_KEY")
+      username = sys.env("GCLOUD_HOSTED_METRICS_ID")
+      password = sys.env("GCLOUD_RW_API_KEY")
     }
   }
   external_labels = {
