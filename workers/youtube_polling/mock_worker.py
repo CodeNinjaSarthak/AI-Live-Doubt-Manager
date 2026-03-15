@@ -22,18 +22,18 @@ _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 sys.path.insert(0, _project_root)
 sys.path.insert(0, os.path.join(_project_root, "backend"))
 
-from app.core.config import settings
-from app.db.models.comment import Comment
-from app.db.models.streaming_session import StreamingSession
-from app.services.websocket.events import event_service
+from app.core.config import settings  # noqa: E402
+from app.db.models.comment import Comment  # noqa: E402
+from app.db.models.streaming_session import StreamingSession  # noqa: E402
+from app.services.websocket.events import event_service  # noqa: E402
 
-from workers.common.db import get_db_session
-from workers.common.queue import (
+from workers.common.db import get_db_session  # noqa: E402
+from workers.common.queue import (  # noqa: E402
     QUEUE_CLASSIFICATION,
     QueueManager,
 )
-from workers.common.redis import get_redis_client
-from workers.common.schemas import ClassificationPayload
+from workers.common.redis import get_redis_client  # noqa: E402
+from workers.common.schemas import ClassificationPayload  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
