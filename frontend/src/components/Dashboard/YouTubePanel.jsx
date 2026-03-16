@@ -7,8 +7,15 @@ export function YouTubePanel({ token }) {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const pollIntervalRef = useRef(null);
+  const messageHandlerRef = useRef(null);
 
-  useEffect(() => () => clearInterval(pollIntervalRef.current), []);
+  useEffect(() => () => {
+    clearInterval(pollIntervalRef.current);
+    if (messageHandlerRef.current) {
+      window.removeEventListener('message', messageHandlerRef.current);
+      messageHandlerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     fetchStatus();
@@ -32,16 +39,19 @@ export function YouTubePanel({ token }) {
       const data = await getYouTubeAuthURL(token);
       const popup = window.open(data.url, 'youtube_oauth', 'width=600,height=700,noopener');
 
-      window.addEventListener('message', function handler(e) {
+      const handler = (e) => {
         if (e.origin !== window.location.origin) return;
         if (e.data?.type === 'youtube_oauth_complete') {
+          messageHandlerRef.current = null;
           clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
           popup?.close();
           fetchStatus();
           setActionLoading(false);
         }
-      }, { once: true });
+      };
+      messageHandlerRef.current = handler;
+      window.addEventListener('message', handler, { once: true });
 
       pollIntervalRef.current = setInterval(() => {
         if (popup && popup.closed) {

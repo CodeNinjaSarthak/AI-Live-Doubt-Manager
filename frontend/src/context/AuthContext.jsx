@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useState } from 'react';
 import {
   login as apiLogin,
   register as apiRegister,
@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
       }
       setIsLoading(false);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [logout]);
 
   async function login(email, password) {
     const data = await apiLogin(email, password);
@@ -66,8 +66,9 @@ export function AuthProvider({ children }) {
     await login(email, password);
   }
 
-  async function logout() {
-    try { await apiLogout(token); } catch (_) {}
+  const logout = useCallback(async () => {
+    const currentToken = localStorage.getItem('token');
+    try { await apiLogout(currentToken); } catch (_) {}
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userEmail');
@@ -75,7 +76,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUserEmail('');
     setUserName('');
-  }
+  }, []);
 
   async function updateProfile(name) {
     const updated = await apiUpdateProfile({ name }, token);
