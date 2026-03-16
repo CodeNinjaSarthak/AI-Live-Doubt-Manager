@@ -14,12 +14,20 @@ export async function refreshAccessToken() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`Token refresh failed: HTTP ${res.status}`);
+      localStorage.removeItem('refreshToken');
+      handleUnauthorized();
+      return null;
+    }
     const data = await res.json();
     localStorage.setItem('token', data.access_token);
     localStorage.setItem('refreshToken', data.refresh_token);
     return data.access_token;
-  } catch {
+  } catch (err) {
+    console.error('Token refresh error:', err);
+    localStorage.removeItem('refreshToken');
+    handleUnauthorized();
     return null;
   }
 }
