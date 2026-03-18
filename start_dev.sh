@@ -42,10 +42,12 @@ NAMES=(
   "Answer Generation"
   "YouTube Polling"
   "YouTube Posting"
+  "Scheduler"
   "Frontend (Vite)"
 )
 DIRS=(
   "$ROOT/backend"
+  "$ROOT"
   "$ROOT"
   "$ROOT"
   "$ROOT"
@@ -62,6 +64,7 @@ CMDS=(
   "python workers/answer_generation/worker.py"
   "python workers/youtube_polling/worker.py"
   "python workers/youtube_posting/worker.py"
+  "cd workers && python -m scheduler.worker"
   "npm run dev"
 )
 
