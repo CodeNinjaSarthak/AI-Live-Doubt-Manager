@@ -24,6 +24,7 @@ from app.services.gemini.client import (
     GeminiClient,
     vector_to_literal,
 )
+from app.services.moderation import ModerationService
 from app.services.websocket.events import event_service
 from sqlalchemy import text
 
@@ -98,6 +99,16 @@ def main() -> None:
                         else:
                             logger.info("No RAG context for cluster %s — using general knowledge fallback", cluster_id)
                         answer_text = gemini_client.generate_answer(questions_text, context)
+
+                        # Moderate before saving or posting
+                        moderation_service = ModerationService()
+                        is_safe, mod_reason = moderation_service.moderate_answer(answer_text)
+                        if not is_safe:
+                            logger.warning(
+                                "Answer rejected by moderation, skipping save and posting",
+                                extra={"cluster_id": cluster_id, "reason": mod_reason},
+                            )
+                            break
 
                         answer = Answer(cluster_id=cluster.id, text=answer_text, is_posted=False)
                         db.add(answer)

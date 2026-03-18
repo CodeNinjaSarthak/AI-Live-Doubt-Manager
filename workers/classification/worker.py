@@ -19,6 +19,7 @@ setup_multiproc_dir()
 from app.core.config import settings  # noqa: E402
 from app.db.models.comment import Comment
 from app.services.gemini.client import GeminiClient
+from app.services.moderation import ModerationService
 from app.services.websocket.events import event_service
 
 from workers.common.db import get_db_session
@@ -56,6 +57,20 @@ def process_task(task, gemini_client, manager, db, redis_client):
     if not comment:
         logger.warning(f"Comment {comment_id} not found, skipping")
         return
+
+    # Moderate before spending classification quota
+    moderation_service = ModerationService()
+    is_safe, mod_reason = moderation_service.moderate_comment(comment.text)
+    if not is_safe:
+        comment.is_question = False
+        comment.confidence_score = 0.0
+        db.commit()
+        logger.info(
+            "Comment rejected by moderation",
+            extra={"comment_id": comment_id, "reason": mod_reason},
+        )
+        return
+
     result = gemini_client.classify_question(comment.text)
     comment.is_question = result["is_question"]
     comment.confidence_score = result["confidence"]
